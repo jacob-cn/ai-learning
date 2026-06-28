@@ -5,6 +5,10 @@ replacement for git history. Add a new entry whenever a stage is added or
 meaningfully changed. Newest entry at the top; tagged releases use a
 `## vX.Y.Z — date` header (Semantic Versioning).
 
+## v1.0.1 — 2026-06-28
+- Added a top-level project `README.md` (overview, live link, how to run a demo).
+- Added `.nojekyll` so GitHub Pages serves the static files as-is (skips Jekyll).
+
 ## v1.0.0 — 2026-06-28 — First public version
 Six stages (multi-turn chatbot & the context window, structured output, tool use,
 RAG, MCP, ReAct & harness engineering), each with a runnable demo and README; a
