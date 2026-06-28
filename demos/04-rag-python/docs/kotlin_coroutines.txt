@@ -1,0 +1,46 @@
+Kotlin Coroutines in Android
+
+Coroutines are Kotlin's solution for asynchronous programming. They replace callbacks
+and RxJava for most use cases and integrate deeply with Android Jetpack libraries.
+Coroutines are lightweight threads that can be suspended and resumed without blocking
+the underlying thread.
+
+Coroutine Scopes in Android
+
+Always use the correct scope for your context. Use viewModelScope in ViewModels — it
+is automatically cancelled when the ViewModel is cleared, preventing memory leaks from
+ongoing network or database operations. Use lifecycleScope in Activities and Fragments
+— it is automatically cancelled when the lifecycle is destroyed.
+
+For app-wide coroutines that should outlive individual screens, use a custom scope
+injected via dependency injection. Never use GlobalScope in production code as it
+creates coroutines that cannot be cancelled and may outlive the app process.
+
+Dispatchers
+
+Use Dispatchers.IO for network calls and file or database operations. This dispatcher
+uses a thread pool optimized for blocking IO operations. Use Dispatchers.Main for
+updating the UI — this dispatcher runs on the Android main thread. Use Dispatchers.Default
+for CPU-intensive operations like parsing large JSON responses or complex calculations.
+
+Never perform network calls on Dispatchers.Main. Android enforces this strictly and
+will throw NetworkOnMainThreadException if you try. Use withContext to switch dispatchers
+within a coroutine without creating a new coroutine.
+
+Structured Concurrency
+
+Structured concurrency is the principle that coroutines live within a defined scope and
+their lifetime is bound to that scope. Child coroutines are automatically cancelled when
+their parent scope is cancelled. This prevents coroutine leaks and makes cancellation
+predictable and reliable.
+
+Use supervisorScope when you want child coroutines to fail independently of each other.
+In a normal coroutineScope, if one child fails, all siblings are cancelled. With
+supervisorScope, each child's failure is isolated. This is useful for parallel
+network requests where you want partial results even if some requests fail.
+
+Error Handling
+
+Use try-catch inside coroutines for local error handling. Use CoroutineExceptionHandler
+for global uncaught exception handling at the scope level. Be aware that
+async-await requires you to catch exceptions at the await call, not at the async call.

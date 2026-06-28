@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "notes-stdio": {
+      "type": "local",
+      "command": ["venv/bin/python3", "run_stdio.py"],
+      "enabled": true
+    },
+    "notes-http": {
+      "type": "local",
+      "command": ["npx", "mcp-remote", "http://127.0.0.1:8000/mcp", "--transport", "http-only"],
+      "enabled": false
+    }
+  }
+}

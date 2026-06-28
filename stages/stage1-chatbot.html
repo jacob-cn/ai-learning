@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 1 — Multi-turn chatbot &amp; the context window</title>
+<meta name="description" content="A CLI chatbot, and the core realization that a language model is stateless. Plus how tokens and tokenizers actually work, and where they run.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Stage 1</p>
+  <span class="stage-tag">Stage 1</span>
+  <h1>Multi-turn chatbot &amp; the context window</h1>
+  <p class="lede">
+    The smallest possible AI app — a chatbot in a terminal — taught me the one
+    thing everything else is built on: the model has no memory.
+  </p>
+
+  <h2>What I built</h2>
+  <p>
+    A command-line chatbot in Python. You type, it replies, you type a follow-up,
+    and it answers as if it remembered the conversation. A couple dozen lines —
+    trivial on the surface. The value was entirely in what it forced me to
+    understand about why that "memory" works at all.
+  </p>
+  <a class="demo-link" href="https://github.com/jacob-cn/ai-learning/tree/main/demos/01-chatbot-python">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8a8 8 0 0 0 5.5 7.6c.4.1.5-.2.5-.4v-1.5c-2 .4-2.5-.5-2.7-1-.1-.3-.6-1-1-1.2-.3-.2-.7-.6 0-.6.6 0 1 .6 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A8 8 0 0 0 16 8c0-4.4-3.6-8-8-8Z"/></svg>
+    View the demo &amp; README on GitHub
+  </a>
+
+  <h2>Key concepts</h2>
+  <p>
+    My first instinct was that a chat session is a long-lived object on a server
+    holding state. It isn't. A model is <strong>stateless</strong>: every call is
+    independent and it remembers nothing from the last one.
+  </p>
+  <p>
+    So how does a follow-up like "what did I just ask?" work? Because the "memory"
+    is a trick I repeat every turn — I resend the <em>entire</em> conversation so
+    far on every single request. The demo keeps that conversation in a plain list
+    and resends it by hand (instead of letting an SDK helper hide it), so you can
+    actually watch the list — and the context it costs — grow with every turn.
+  </p>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 660 200" role="img"
+           aria-label="On turn three, the request still contains the system prompt plus turns one and two plus the new message — the whole history is resent every time.">
+        <defs>
+          <marker id="ah1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <text x="20" y="24" class="svg-ph">REQUEST ON TURN 3 — EVERYTHING RESENT</text>
+        <rect class="svg-box-t" x="20"  y="40" width="120" height="44" rx="8"/>
+        <text x="80" y="60" class="svg-lbl" text-anchor="middle">System</text>
+        <text x="80" y="76" class="svg-sub" text-anchor="middle">prompt</text>
+        <rect class="svg-box" x="150" y="40" width="120" height="44" rx="8"/>
+        <text x="210" y="60" class="svg-lbl" text-anchor="middle">Turn 1</text>
+        <text x="210" y="76" class="svg-sub" text-anchor="middle">you + reply</text>
+        <rect class="svg-box" x="280" y="40" width="120" height="44" rx="8"/>
+        <text x="340" y="60" class="svg-lbl" text-anchor="middle">Turn 2</text>
+        <text x="340" y="76" class="svg-sub" text-anchor="middle">you + reply</text>
+        <rect class="svg-box-a" x="410" y="40" width="130" height="44" rx="8"/>
+        <text x="475" y="60" class="svg-lbl" text-anchor="middle">New message</text>
+        <text x="475" y="76" class="svg-sub" text-anchor="middle">turn 3</text>
+        <path class="svg-ar" marker-end="url(#ah1)" d="M540 62 H600"/>
+        <rect class="svg-box" x="600" y="40" width="50" height="44" rx="8"/>
+        <text x="625" y="66" class="svg-lbl" text-anchor="middle">LLM</text>
+
+        <path d="M20 110 H540" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="280" y="132" class="svg-sub" text-anchor="middle">this whole row is one request — its total size is the context window in use</text>
+        <text x="280" y="170" class="svg-lbl" text-anchor="middle" style="font-size:13px">Next turn? Append turn 3's reply and resend all of it again.</text>
+      </svg>
+    </div>
+    <figcaption>The model is stateless — the conversation only persists because the client keeps resending it.</figcaption>
+  </figure>
+
+  <p>Three terms fall out of this, and they recur for the rest of the journey:</p>
+  <ul>
+    <li><strong><a href="../glossary.html#token">Token</a></strong> — the unit a
+      model reads in: a <em>subword</em> piece, not a whole word (~4 characters of
+      English on average). More on this just below.</li>
+    <li><strong><a href="../glossary.html#context-window">Context window</a></strong>
+      — the total text a model can consider at once. History, system prompt and
+      your new message all share this one budget, so it can't grow forever.</li>
+    <li><strong><a href="../glossary.html#system-prompt">System prompt</a></strong>
+      — a persistent instruction set, separate from the conversation, that sets
+      the model's role ("you are a helpful assistant for a developer learning AI").</li>
+  </ul>
+
+  <h2>So what's a token, really?</h2>
+  <p>
+    This one tripped me up. The shorthand "1 word ≈ 1 token" describes the
+    <em>old</em> way tokenizers worked, not what modern models do. Today a token is
+    a <strong>subword</strong> piece — usually a chunk of a word, sometimes a whole
+    short word, sometimes just a space or a punctuation mark. Here's a real split
+    from the GPT tokenizer — this one sentence is <strong>17 tokens</strong>, each a
+    coloured block below:
+  </p>
+  <div class="tokenized" aria-label="The sentence 'I am an AI assistant working with a tokenizer; tokenization isn't always intuitive.' split into 17 tokens, each shown with its own coloured highlight."><span class="tk">I</span><span class="tk"> am</span><span class="tk"> an</span><span class="tk"> AI</span><span class="tk"> assistant</span><span class="tk"> working</span><span class="tk"> with</span><span class="tk"> a</span><span class="tk"> tokenizer</span><span class="tk">;</span><span class="tk"> token</span><span class="tk">ization</span><span class="tk"> isn</span><span class="tk">'t</span><span class="tk"> always</span><span class="tk"> intuitive</span><span class="tk">.</span></div>
+  <p class="small muted">
+    Common words are usually one token (the colour starts at the leading space). But
+    <code>tokenizer</code>/<code>tokenization</code> show how a longer word breaks
+    up — <code>token</code> + <code>ization</code> — <code>isn't</code> splits into
+    <code>isn</code> + <code>'t</code>, and punctuation gets its own token. That's
+    why word counts and token counts never quite line up.
+  </p>
+
+  <h3>How the pieces get chosen</h3>
+  <p>
+    The mainstream method is <strong>Byte-Pair Encoding (BPE)</strong> (GPT, Llama),
+    with close relatives like WordPiece and SentencePiece (Gemini). The key word is
+    <em>byte</em>: the text is first turned into its raw UTF-8 bytes, and the
+    tokenizer repeatedly <strong>merges the most frequent adjacent pair</strong> into
+    a new piece. Frequent words become a single token, rare ones fall back to smaller
+    pieces, and nothing is ever truly "unknown" — worst case, a token is one raw byte.
+  </p>
+  <p>
+    That cuts both ways — and it's about <em>frequency</em>, not characters. A rare
+    character can split into its raw bytes (<span lang="zh-Hant">謝</span> =
+    <strong>three</strong> tokens in GPT-4), while a common word merges into one
+    (<span lang="ja">好き</span> = <strong>one</strong> token in GPT-5). English still
+    averages ~4 characters per token; most other languages pack more.
+  </p>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 720 150" role="img"
+           aria-label="The text 'Tokenizing coroutines' is split by the tokenizer into four subword pieces — Token, izing, space-cor, outines — mapped to the ID numbers 3404, 4954, 1867, 29728, which are what the model receives.">
+        <defs>
+          <marker id="ah2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <rect class="svg-box" x="12" y="50" width="128" height="52" rx="8"/>
+        <text x="76" y="73" class="svg-lbl" text-anchor="middle">"Tokenizing</text>
+        <text x="76" y="91" class="svg-lbl" text-anchor="middle">coroutines"</text>
+        <path class="svg-ar" marker-end="url(#ah2)" d="M140 76 H166"/>
+        <rect class="svg-box-a" x="168" y="40" width="212" height="72" rx="8"/>
+        <text x="274" y="60" class="svg-lbl" text-anchor="middle">tokenizer — subword split</text>
+        <text x="274" y="82" class="svg-sub" text-anchor="middle">Token · izing · ␣cor · outines</text>
+        <text x="274" y="99" class="svg-sub" text-anchor="middle">(4 tokens, not 2 words)</text>
+        <path class="svg-ar" marker-end="url(#ah2)" d="M380 76 H406"/>
+        <rect class="svg-box-t" x="408" y="50" width="168" height="52" rx="8"/>
+        <text x="492" y="72" class="svg-lbl" text-anchor="middle">token IDs</text>
+        <text x="492" y="90" class="svg-sub" text-anchor="middle">3404 · 4954 · 1867 · 29728</text>
+        <path class="svg-ar" marker-end="url(#ah2)" d="M576 76 H602"/>
+        <rect class="svg-box" x="604" y="50" width="104" height="52" rx="8"/>
+        <text x="656" y="80" class="svg-lbl" text-anchor="middle">Model</text>
+      </svg>
+    </div>
+    <figcaption>Text in → subword tokens → ID numbers → the model. The model only ever sees the IDs, never letters.</figcaption>
+  </figure>
+
+  <p>
+    Want to see it for real? Paste any text into a live tokenizer and watch it
+    split: <a href="https://platform.openai.com/tokenizer">OpenAI's tokenizer</a> or
+    <a href="https://gpt-tokenizer.dev/">gpt-tokenizer.dev</a>.
+  </p>
+
+  <p>The questions I actually had about it:</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Is the tokenizer itself an AI model?</td>
+        <td>No — not a neural network. Its vocabulary is <em>learned</em> from a
+          corpus (which pairs of characters occur together most), but at runtime
+          it's a fast, deterministic split-and-lookup. No GPU, no guessing.</td>
+      </tr>
+      <tr>
+        <td>Can a model use any tokenizer?</td>
+        <td>No. Each model is trained with <strong>one fixed tokenizer</strong> —
+          its token IDs are baked into the model's internal tables. Swap the
+          tokenizer and the IDs become meaningless. Model and tokenizer are a
+          matched pair.</td>
+      </tr>
+      <tr>
+        <td>Where does tokenizing run?</td>
+        <td>When you call a hosted API, it runs <strong>on the provider's
+          server</strong>, right before the model. The vocabulary is usually
+          public, though, so you can also run the same tokenizer locally to
+          estimate counts before sending.</td>
+      </tr>
+      <tr>
+        <td>If it runs on their server, how do I know my token count?</td>
+        <td>Two ways: providers expose a <em>count-tokens</em> call, and every
+          response comes back with a <em>usage</em> block — prompt tokens, output
+          tokens, total. You read the cost back from the reply.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Gotchas &amp; lessons</h2>
+  <div class="callout">
+    <span class="tag">Getting access</span>
+    <p>
+      With a Google account, Gemini API access is quick to get: a project in
+      Google AI Studio comes with a little free-tier trial usage — enough to learn
+      on. The one thing to watch is the <a href="stage6-agent.html">rate limit</a>:
+      once a project hits it, you either spin up a fresh project or wait for the
+      next day's reset.
+    </p>
+  </div>
+  <div class="callout">
+    <span class="tag">Tokens aren't characters</span>
+    <p>
+      Because tokenizers work on <strong>UTF-8 bytes</strong>, token cost isn't even
+      across languages. An English letter is one byte, but a Chinese or Japanese
+      character is three — so a less-common character like
+      <span lang="zh-Hant">謝</span> can land as three separate tokens. The sting: the
+      same prompt can cost several times more tokens — more money, more context — in
+      some languages than in English. Budget by tokens, not characters.
+    </p>
+  </div>
+
+  <h2>The core mechanic, in code</h2>
+  <p>
+    No chat helper here — the demo holds the history in a plain <code>history</code>
+    list and sends <em>all</em> of it on every call, re-sending the earlier turns
+    each time. That's the multi-turn mechanic in the open. Reading it top to bottom:
+  </p>
+  <span class="filemark">demos/01-chatbot-python/chatbot.py</span>
+<pre><code>history = []   <span class="c"># the model is stateless — THIS list is the only memory</span>
+
+<span class="k">while</span> <span class="n">True</span>:
+    user_input = input(<span class="s">"You: "</span>).strip()
+    history.append(types.Content(role=<span class="s">"user"</span>, parts=[types.Part(text=user_input)]))
+
+    <span class="c"># send the ENTIRE history every call — earlier turns get re-sent, the multi-turn part</span>
+    response = client.models.generate_content(
+        model=<span class="s">"gemini-2.5-flash"</span>,
+        contents=history,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+    )
+
+    history.append(types.Content(role=<span class="s">"model"</span>, parts=[types.Part(text=response.text)]))
+    print(<span class="s">f"Gemini: {response.text}"</span>)
+    <span class="c"># response.usage_metadata.prompt_token_count = size of the context sent this turn</span>
+</code></pre>
+  <ol class="codewalk">
+    <li><b>The <code>history</code> list</b> is the entire memory. The model keeps
+      nothing between calls — if it's not in this list, it never happened.</li>
+    <li><b>Each turn appends your message</b> to the list as a <code>user</code>
+      message before doing anything else.</li>
+    <li><b><code>contents=history</code></b> is the key line: the whole list is
+      sent every call. Turn 3 only knows about turn 1 because turn 1 is still in
+      this list, re-sent along with everything else.</li>
+    <li><b>The reply is appended back</b> as a <code>model</code> message so the
+      next turn includes it too — and <code>usage_metadata.prompt_token_count</code>
+      reports how big the context sent this turn was. That's what the demo prints
+      climbing every turn: one new message, the rest previously sent.</li>
+  </ol>
+
+  <div class="pager">
+    <a class="prev" href="../index.html"><span class="dir">&larr; Back</span>All stages</a>
+    <a class="next" href="stage2-code-reviewer.html"><span class="dir">Next &rarr;</span>Structured output</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Stage 1 of 6 · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 3 — Tool use / function calling</title>
+<meta name="description" content="A dev assistant that reads files and searches code. The model only requests a tool; your code runs it. The agent loop, and what happens when a noisy tool floods the context window.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Stage 3</p>
+  <span class="stage-tag">Stage 3</span>
+  <h1>Tool use / function calling</h1>
+  <p class="lede">
+    Until now the model could only talk. This is the stage where it can
+    <em>act</em> — by asking my code to do things on its behalf. It's also the
+    single most important mental model in the whole journey.
+  </p>
+
+  <h2>What I built</h2>
+  <p>
+    A dev assistant in Python with three tools: read a file, list a directory, and
+    search for a keyword across files. You ask "what's in
+    <code>dev_assistant.py</code>?" and it reads the real file and answers from the
+    actual contents — not a guess. Small program, but it's the first one that
+    reaches out and touches my machine.
+  </p>
+  <a class="demo-link" href="https://github.com/jacob-cn/ai-learning/tree/main/demos/03-tool-use-python">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8a8 8 0 0 0 5.5 7.6c.4.1.5-.2.5-.4v-1.5c-2 .4-2.5-.5-2.7-1-.1-.3-.6-1-1-1.2-.3-.2-.7-.6 0-.6.6 0 1 .6 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A8 8 0 0 0 16 8c0-4.4-3.6-8-8-8Z"/></svg>
+    View the demo &amp; README on GitHub
+  </a>
+
+  <h2>Key concepts</h2>
+  <h3>The model never runs anything</h3>
+  <p>
+    This is the part that surprised me most.
+    <a href="../glossary.html#tool-use">Tool use</a> (a.k.a. function calling) does
+    <em>not</em> mean the model executes code. I give it a list of described
+    functions — name, description, parameter schema — and all the model can do is
+    <strong>reply with a request</strong>: "call <code>read_file</code> with
+    <code>path='./x.py'</code>." My code reads that request, runs the real
+    function, and hands the result back. The model is the decider; my code is the
+    hands.
+  </p>
+
+  <h3>How the model knows which tools exist</h3>
+  <p>
+    If it can't run anything, how does the model even know <code>read_file</code>
+    is an option? You tell it. Alongside the conversation, every request carries a
+    list of <strong>tool definitions</strong> (Gemini calls them <em>function
+    declarations</em>), and each one is pure description — no code:
+  </p>
+  <ul>
+    <li>a <strong>name</strong> the model uses to request the tool,</li>
+    <li>a plain-English <strong>description</strong> of what it does and when to use it,</li>
+    <li>a <strong>parameter schema</strong> — the arguments it takes, their types,
+      and which are required.</li>
+  </ul>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 560 200" role="img"
+           aria-label="A tool definition the model receives has three parts: a name (read_file), a description ('Read the contents of a file at a given path'), and a parameter schema (path, a required string). The model reads only this — never the function's code — to decide what to request.">
+        <defs>
+          <marker id="ahT" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <rect class="svg-box-a" x="20" y="20" width="330" height="160" rx="10"/>
+        <text x="38" y="43" class="svg-ph">ONE TOOL DEFINITION — ALL THE MODEL SEES</text>
+        <line x1="20" y1="54" x2="350" y2="54" stroke="var(--border)" stroke-width="1"/>
+        <text x="38" y="83" class="svg-lbl">name</text>
+        <text x="150" y="83" class="svg-sub">read_file</text>
+        <text x="38" y="115" class="svg-lbl">description</text>
+        <text x="150" y="109" class="svg-sub">"Read the contents of a</text>
+        <text x="150" y="125" class="svg-sub">file at a given path."</text>
+        <text x="38" y="161" class="svg-lbl">parameters</text>
+        <text x="150" y="161" class="svg-sub">path: string (required)</text>
+        <path class="svg-ar" marker-end="url(#ahT)" d="M352 100 H406"/>
+        <rect class="svg-box" x="410" y="78" width="130" height="44" rx="9"/>
+        <text x="475" y="98" class="svg-lbl" text-anchor="middle">Model</text>
+        <text x="475" y="114" class="svg-sub" text-anchor="middle">reads, then picks</text>
+      </svg>
+    </div>
+    <figcaption>The description is the model's <em>only</em> knowledge of the tool — it never sees your function's code.</figcaption>
+  </figure>
+
+  <p>
+    Because that description is all the model has to go on, its wording carries real
+    weight: vague text gets the tool picked at the wrong moment or called with the
+    wrong arguments. (This is the exact same shape <a href="stage5-mcp.html">MCP</a>
+    uses in Stage 5 — a tool is just a name, a description, and a schema, wherever
+    it comes from.)
+  </p>
+
+  <h3>The tool call comes back structured</h3>
+  <p>
+    Here's the piece that actually makes the loop work. When the model wants a tool,
+    it doesn't write "please read main.py" as a sentence — it returns a
+    <strong>structured function call</strong>: a dedicated part of the response
+    carrying the tool's <code>name</code> and its <code>args</code> as real data,
+    not prose. Producing that exact format is a trained ability (more on that in
+    <a href="stage6-agent.html">Stage 6</a>), and it's what lets your code react
+    <em>programmatically</em> instead of trying to parse English.
+  </p>
+  <p>
+    So every reply is one of two shapes, and the agent tells them apart by shape —
+    not by reading the wording:
+  </p>
+  <ul>
+    <li>has a <code>function_call</code> part → the model wants a tool; run it.</li>
+    <li>plain text, no function call → the model is done; that text is the answer.</li>
+  </ul>
+  <p>
+    When your code finishes the tool, it sends the outcome back the same structured
+    way — a <code>function_response</code> tagged with the tool's name — so the
+    model can read the result on its next turn. That request-and-response pair is
+    the entire conversation between the model and a tool.
+  </p>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 600 200" role="img"
+           aria-label="A cycle: the model emits a structured function_call (name read_file, args path ./main.py); your code runs the function and returns a structured function_response (name read_file, result the file contents) to the model.">
+        <defs>
+          <marker id="ahS" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <rect class="svg-box" x="20" y="72" width="106" height="56" rx="9"/>
+        <text x="73" y="104" class="svg-lbl" text-anchor="middle">Model</text>
+        <rect class="svg-box" x="474" y="72" width="106" height="56" rx="9"/>
+        <text x="527" y="98" class="svg-lbl" text-anchor="middle">Your code</text>
+        <text x="527" y="115" class="svg-sub" text-anchor="middle">runs read_file</text>
+
+        <rect class="svg-box-a" x="160" y="8" width="280" height="62" rx="9"/>
+        <text x="174" y="28" class="svg-ph">FUNCTION_CALL — model → you</text>
+        <text x="174" y="48" class="svg-sub">name: "read_file"</text>
+        <text x="174" y="64" class="svg-sub">args: { "path": "./main.py" }</text>
+
+        <rect class="svg-box-t" x="160" y="130" width="280" height="62" rx="9"/>
+        <text x="174" y="150" class="svg-ph" style="fill:var(--teal)">FUNCTION_RESPONSE — you → model</text>
+        <text x="174" y="170" class="svg-sub">name: "read_file"</text>
+        <text x="174" y="186" class="svg-sub">result: "&lt;file contents&gt;"</text>
+
+        <path class="svg-ar" marker-end="url(#ahS)" d="M73 72 V40 H158"/>
+        <path class="svg-ar" marker-end="url(#ahS)" d="M440 40 H527 V70"/>
+        <path class="svg-ar-t" marker-end="url(#ahS)" d="M527 128 V160 H442"/>
+        <path class="svg-ar-t" marker-end="url(#ahS)" d="M160 160 H73 V130"/>
+      </svg>
+    </div>
+    <figcaption>Two structured messages, round and round: the model's <code>function_call</code> out, your <code>function_response</code> back.</figcaption>
+  </figure>
+
+  <h3>The agent loop</h3>
+  <p>
+    One tool call is rarely enough, so it runs in a loop. The
+    <a href="../glossary.html#agent-loop">agent loop</a> is the heartbeat of every
+    agent that follows — and the key thing is that it genuinely loops, sometimes
+    many times, before the model produces a final answer:
+  </p>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 520 330" role="img"
+           aria-label="Your question enters the loop at the top. It is sent with the history to the model. If the model requests a tool, your code runs it and appends the result, then loops back to the model. If not, that reply is the final answer and the loop ends.">
+        <defs>
+          <marker id="ah3" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <!-- entry -->
+        <text x="260" y="16" class="svg-ph" text-anchor="middle">START HERE</text>
+        <rect class="svg-box" x="180" y="24" width="160" height="42" rx="9"/>
+        <text x="260" y="50" class="svg-lbl" text-anchor="middle">Your question</text>
+        <path class="svg-ar" marker-end="url(#ah3)" d="M260 66 V82"/>
+        <!-- model -->
+        <rect class="svg-box-a" x="180" y="84" width="160" height="50" rx="9"/>
+        <text x="260" y="106" class="svg-lbl" text-anchor="middle">Send history → model</text>
+        <text x="260" y="123" class="svg-sub" text-anchor="middle">what should I do next?</text>
+        <!-- decision -->
+        <path class="svg-box" d="M260 159 L330 199 L260 239 L190 199 Z"/>
+        <text x="260" y="195" class="svg-lbl" text-anchor="middle">Tool</text>
+        <text x="260" y="211" class="svg-lbl" text-anchor="middle">requested?</text>
+        <path class="svg-ar" marker-end="url(#ah3)" d="M260 134 V157"/>
+        <!-- yes branch to execute -->
+        <text x="345" y="194" class="svg-ph" style="fill:var(--accent)">YES</text>
+        <rect class="svg-box-t" x="350" y="172" width="150" height="54" rx="9"/>
+        <text x="425" y="194" class="svg-lbl" text-anchor="middle">My code runs it</text>
+        <text x="425" y="211" class="svg-sub" text-anchor="middle">append result to history</text>
+        <path class="svg-ar" marker-end="url(#ah3)" d="M330 199 H348"/>
+        <!-- loop back up -->
+        <path class="svg-ar" marker-end="url(#ah3)" d="M425 172 V104 H342" fill="none"/>
+        <text x="382" y="98" class="svg-sub" text-anchor="middle">loop back</text>
+        <!-- no branch -->
+        <text x="232" y="264" class="svg-ph" style="fill:var(--teal)" text-anchor="end">NO</text>
+        <rect class="svg-box" x="175" y="270" width="170" height="54" rx="9"/>
+        <text x="260" y="292" class="svg-lbl" text-anchor="middle">Final answer</text>
+        <text x="260" y="309" class="svg-sub" text-anchor="middle">no tool → loop ends</text>
+        <path class="svg-ar-t" marker-end="url(#ah3)" d="M260 241 V268"/>
+      </svg>
+    </div>
+    <figcaption>Your question enters at the top; then it cycles — model, tool, result, model — until a reply has no tool request. That reply is the answer.</figcaption>
+  </figure>
+
+  <p>
+    Notice this is the same message list from <a href="stage1-chatbot.html">Stage
+    1</a>, now grown to hold tool requests and tool results too. The exit
+    condition is simple: a response with no tool request <em>is</em> the final
+    answer.
+  </p>
+
+  <h2>The tools most agents share</h2>
+  <p>
+    Once you've seen this pattern, you start spotting it everywhere. Most coding and
+    agentic assistants expose a strikingly similar core toolset — the capabilities
+    barely differ, even when the names (and the naming convention) do. The real tool
+    names from a few:
+  </p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Capability</th><th>Real tool names (and whose)</th></tr></thead>
+    <tbody>
+      <tr><td>Read a file</td><td><code>Read</code> (Claude Code), <code>read_file</code> (Cursor, Cline)</td></tr>
+      <tr><td>Edit / write a file</td><td><code>Edit</code> / <code>Write</code> (Claude Code), <code>edit_file</code> (Cursor), <code>write_to_file</code> / <code>replace_in_file</code> (Cline), <code>apply_patch</code> (Codex)</td></tr>
+      <tr><td>List or find files</td><td><code>Glob</code> (Claude Code), <code>list_dir</code> (Cursor), <code>list_files</code> (Cline)</td></tr>
+      <tr><td>Search the code</td><td><code>Grep</code> (Claude Code), <code>codebase_search</code> / <code>grep_search</code> (Cursor), <code>search_files</code> (Cline)</td></tr>
+      <tr><td>Run a shell command</td><td><code>Bash</code> (Claude Code), <code>run_terminal_cmd</code> (Cursor), <code>execute_command</code> (Cline), <code>shell</code> (Codex)</td></tr>
+      <tr><td>Search / fetch the web</td><td><code>WebSearch</code> / <code>WebFetch</code> (Claude Code), <code>web_search</code> (Cursor)</td></tr>
+      <tr><td>Ask the user a question</td><td><code>AskUserQuestion</code> (Claude Code), <code>ask_followup_question</code> (Cline)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    Even the <em>convention</em> differs — Claude Code uses TitleCase
+    (<code>Read</code>, <code>Bash</code>), most others snake_case
+    (<code>read_file</code>, <code>execute_command</code>). That last row is easy to
+    overlook, but it's how a good agent avoids guessing: when the goal is ambiguous,
+    it calls a tool to <em>ask</em> rather than barrel ahead. (You may have noticed
+    it in action a few times already.)
+  </p>
+  <p>
+    My demo's three tools (read, list, search) are the small end of this same set.
+    Each is just a name, a description, and a parameter schema — so swapping one
+    agent's toolset for another's is mostly renaming, not reinventing.
+  </p>
+
+  <h2>Gotchas &amp; lessons</h2>
+  <div class="callout">
+    <span class="tag">The model can fake it</span>
+    <p>
+      My first "successful" run was a lie. The model replied "Sure, I'll read that
+      file and check…" — a fluent sentence <em>describing</em> a tool call it never
+      actually made. Nothing ran. The tell is concrete: a real call prints
+      <code>&#128295; Executing tool: read_file(...)</code> before the answer. No
+      that line, no action — the model is just role-playing being an agent.
+    </p>
+  </div>
+
+  <h2>Where context bloat starts</h2>
+  <p>
+    Remember that a single request from you can spin the loop many times — the
+    model might read one file, then another, then search, all to answer one
+    question. Each of those rounds appends its tool result to the history and
+    resends it, so the <a href="../glossary.html#context-window">context window</a>
+    can grow a lot <em>within one question</em> — which raises two things worth
+    understanding before Stage 6 has to manage them: what happens when it fills,
+    and what happens when a single tool floods it.
+  </p>
+  <h3>What happens when the window fills up</h3>
+  <p>
+    The window is a hard cap — but hitting it usually isn't the disaster it sounds
+    like, because good tools see it coming. Three things can happen, worst to best:
+  </p>
+  <ul>
+    <li><strong>Hard error.</strong> The rawest case: the API simply rejects a
+      request that's over the limit with a too-many-tokens error.</li>
+    <li><strong>Blunt truncation.</strong> A naive app drops the oldest messages to
+      make room. It won't crash, but it silently <em>forgets</em> the start of the
+      conversation and can quietly get worse.</li>
+    <li><strong><a href="../glossary.html#context-compaction">Context
+      compaction</a>.</strong> What most mature agents and chat tools actually do:
+      as the window fills, they <em>summarize</em> the earlier turns into a compact
+      form — keeping the decisions, facts, and current state, dropping the verbatim
+      detail — and carry on.</li>
+  </ul>
+  <p>
+    So the honest picture is the third one. Running out of room rarely stops a good
+    agent dead; it compresses, loses a little fidelity, and keeps going — the
+    session continues smoothly even though some fine-grained history is gone. That
+    summarized memory is itself part of the <a href="stage6-agent.html">harness</a>
+    in Stage 6, which is why "the agent forgot something" is more often lossy
+    compaction than a true crash.
+  </p>
+  <h3>The noisy-tool trap</h3>
+  <p>
+    Now imagine a tool that runs a build and returns all of its output. One call
+    can dump thousands of lines of compiler logs straight into the context — and
+    that single result might eat a huge slice of the window in one shot. It blows
+    the token budget, spikes the cost, and pushes genuinely useful earlier context
+    out the back. The fix is to never feed raw firehose output back: truncate it,
+    or extract only the lines that matter (the error, the summary). That's exactly
+    what <a href="stage6-agent.html">Stage 6</a>'s agent does with a truncation
+    cap on every tool result.
+  </p>
+
+  <h2>The core mechanic, in code</h2>
+  <p>
+    Two parts make tool use work: first you <strong>describe</strong> the tools to
+    the model, then you <strong>run the loop</strong> that handles whatever it asks
+    for.
+  </p>
+
+  <h3>Part 1 — describe the tools to the model</h3>
+  <p>
+    Each tool is declared as a name, a description, and a parameter schema — then
+    the whole list is handed to the model so it knows what it can request.
+  </p>
+  <span class="filemark">demos/03-tool-use-python/dev_assistant.py</span>
+<pre><code><span class="c"># a description only — note there is no actual code in here</span>
+TOOLS = [
+    {
+        <span class="s">"name"</span>: <span class="s">"read_file"</span>,
+        <span class="s">"description"</span>: <span class="s">"Read the contents of a file at a given path."</span>,
+        <span class="s">"parameters"</span>: {
+            <span class="s">"type"</span>: <span class="s">"object"</span>,
+            <span class="s">"properties"</span>: {<span class="s">"path"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+            <span class="s">"required"</span>: [<span class="s">"path"</span>],
+        },
+    },
+    <span class="c"># ... list_files and search_in_files are described the same way ...</span>
+]
+
+<span class="c"># wrap the declarations — this is the "menu" handed to the model each request</span>
+tools_config = types.Tool(function_declarations=[types.FunctionDeclaration(**t) <span class="k">for</span> t <span class="k">in</span> TOOLS])
+</code></pre>
+  <ol class="codewalk">
+    <li><b>Each entry is a description, not code</b> — a <code>name</code>, a
+      <code>description</code>, and a <code>parameters</code> schema (the JSON-style
+      types, and which arguments are <code>required</code>).</li>
+    <li><b>These words are the model's only knowledge of the tool.</b> It never sees
+      the body of <code>read_file</code>, so vague descriptions here are exactly
+      what make it pick the wrong tool or pass bad arguments.</li>
+    <li><b><code>tools_config</code></b> wraps the declarations; it's then passed on
+      every request, so the model always sees the menu. The real <code>read_file</code>
+      function — and the <code>execute_tool</code> router that maps a name back to it
+      — live elsewhere in the file. Declaration and implementation are deliberately
+      separate.</li>
+  </ol>
+
+  <h3>Part 2 — run the loop</h3>
+  <p>
+    With the menu attached, the loop collects any tool requests, executes each,
+    appends the results, and repeats:
+  </p>
+  <span class="filemark">demos/03-tool-use-python/dev_assistant.py</span>
+<pre><code><span class="k">while</span> <span class="n">True</span>:
+    response = client.models.generate_content(
+        model=<span class="s">"gemini-2.5-flash"</span>, contents=contents,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, tools=[tools_config]),
+    )
+    parts = response.candidates[<span class="n">0</span>].content.parts
+
+    calls = [p.function_call <span class="k">for</span> p <span class="k">in</span> parts <span class="k">if</span> p.function_call]
+
+    <span class="k">if</span> <span class="k">not</span> calls:                              <span class="c"># no request → this IS the answer</span>
+        <span class="k">return</span> <span class="s">""</span>.join(p.text <span class="k">for</span> p <span class="k">in</span> parts <span class="k">if</span> p.text)
+
+    contents.append(response.candidates[<span class="n">0</span>].content)   <span class="c"># the model's turn</span>
+    <span class="k">for</span> call <span class="k">in</span> calls:
+        result = execute_tool(call.name, dict(call.args))   <span class="c"># MY code runs it</span>
+        contents.append(types.Content(role=<span class="s">"user"</span>, parts=[types.Part(
+            function_response=types.FunctionResponse(name=call.name, response={<span class="s">"result"</span>: result}))]))
+</code></pre>
+  <ol class="codewalk">
+    <li><b>The loop</b> sends the whole <code>contents</code> list to the model each
+      time around — same growing history as Stage 1, plus the tool menu from Part 1.</li>
+    <li><b>It checks each part for a <code>function_call</code>.</b> That structured
+      part — not any English in the text — is how the loop detects the model wants a
+      tool; a reply can hold plain text, a function call, or both.</li>
+    <li><b>No function call means we're done</b> — that reply is the final answer
+      and the loop returns it.</li>
+    <li><b>Otherwise, for each call,</b> <code>execute_tool</code> runs the real
+      function (the line where <em>my</em> code, not the model, acts), and the
+      outcome goes back as a structured <code>function_response</code> tagged with
+      the tool's name. Then the loop repeats with the result in hand — which is also
+      where the context starts growing.</li>
+  </ol>
+
+  <div class="pager">
+    <a class="prev" href="stage2-code-reviewer.html"><span class="dir">&larr; Previous</span>Structured output</a>
+    <a class="next" href="stage4-rag.html"><span class="dir">Next &rarr;</span>RAG &amp; embeddings</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Stage 3 of 6 · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

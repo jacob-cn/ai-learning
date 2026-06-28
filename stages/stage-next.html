@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where this could go — AI Learning Journey</title>
+<meta name="description" content="Where the journey is heading next: the directions I'm reading into but haven't built yet. A living page that always sits after the latest stage.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Where this could go</p>
+  <span class="stage-tag">Looking ahead</span>
+  <h1>Where this could go</h1>
+  <p class="lede">
+    A living page. It always sits just after the latest finished stage, and holds
+    the directions I'm reading into but haven't built a demo for yet — so it's
+    honestly labelled as "not done," not as another stage.
+  </p>
+
+  <h2>Where I am</h2>
+  <p>
+    Six stages took me from "the model has no memory" to "the model edits my files
+    and a second model checks its work." The thread running through all of it: a
+    capable model is only half the system — the
+    <a href="stage6-agent.html">harness</a> around it is where most of the real
+    engineering lives. Everything below builds on that idea.
+  </p>
+
+  <h2>Directions I'm eyeing</h2>
+  <p>
+    These are candidates for future stages, not promises. Each becomes a real stage
+    only once there's a runnable demo and at least one honest lesson behind it.
+  </p>
+
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Direction</th><th>The question it answers</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Spec-Driven Development</strong></td>
+        <td>How rigorously can I specify intent <em>before</em> an agent acts —
+            instead of steering it turn by turn?</td>
+        <td><span class="pill warn">Reading</span></td>
+      </tr>
+      <tr>
+        <td><strong>Loop engineering</strong></td>
+        <td>What does it take to run a harness on a schedule, where the system finds
+            its own work and decides when to stop?</td>
+        <td><span class="pill warn">Reading</span></td>
+      </tr>
+      <tr>
+        <td><strong>Multi-agent systems</strong></td>
+        <td>When is it actually better to split a job across several specialized
+            agents than to make one agent smarter?</td>
+        <td><span class="pill">Curious</span></td>
+      </tr>
+      <tr>
+        <td><strong>Evals &amp; measurement</strong></td>
+        <td>How do I know a prompt or harness change made things <em>better</em>,
+            not just different — with numbers, not vibes?</td>
+        <td><span class="pill">Curious</span></td>
+      </tr>
+      <tr>
+        <td><strong>Local &amp; open models</strong></td>
+        <td>How far can I get running models on my own hardware (Ollama already
+            showed up in <a href="stage4-rag.html">Stage 4</a>) before a hosted API
+            is worth it?</td>
+        <td><span class="pill">Curious</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>How a direction becomes a stage</h2>
+  <p>
+    The bar is the same one every existing stage cleared: a small thing built and
+    broken for real, redacted code in <code>demos/</code>, and a write-up with the
+    gotcha left in. When one of the rows above clears it, it graduates to a numbered
+    stage — and this page moves one step further down the road.
+  </p>
+
+  <div class="pager">
+    <a class="prev" href="stage6-agent.html"><span class="dir">&larr; Previous</span>ReAct agents</a>
+    <a class="next" href="../glossary.html"><span class="dir">Next &rarr;</span>Glossary</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Looking ahead · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

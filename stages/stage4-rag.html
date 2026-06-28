@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 4 — RAG &amp; embeddings</title>
+<meta name="description" content="Chat with your own docs: chunk, embed, and retrieve only the relevant pieces. How RAG searches by meaning, why the embedding model matters, how many dimensions models use, and where RAG really fits in AI web search.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Stage 4</p>
+  <span class="stage-tag">Stage 4</span>
+  <h1>RAG &amp; embeddings</h1>
+  <p class="lede">
+    The context window is finite, so you can't paste every document into every
+    prompt. RAG is the answer to "how do I let a model use a pile of my own data
+    without drowning it?"
+  </p>
+
+  <h2>What I built</h2>
+  <p>
+    A "chat with your docs" tool in Python. It reads a folder of Android notes and
+    answers questions using only the relevant passages — and prints which file
+    each answer came from. Embeddings run locally through Ollama, the vectors live
+    in a local ChromaDB, and Gemini writes the final answer from just the few
+    passages that were retrieved.
+  </p>
+  <a class="demo-link" href="https://github.com/jacob-cn/ai-learning/tree/main/demos/04-rag-python">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8a8 8 0 0 0 5.5 7.6c.4.1.5-.2.5-.4v-1.5c-2 .4-2.5-.5-2.7-1-.1-.3-.6-1-1-1.2-.3-.2-.7-.6 0-.6.6 0 1 .6 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A8 8 0 0 0 16 8c0-4.4-3.6-8-8-8Z"/></svg>
+    View the demo &amp; README on GitHub
+  </a>
+
+  <h2>Key concepts</h2>
+  <ul>
+    <li><strong><a href="../glossary.html#embedding">Embedding</a></strong> — text
+      turned into a list of numbers (a vector) by an embedding model, such that
+      similar <em>meanings</em> land at similar numbers.</li>
+    <li><strong><a href="../glossary.html#chunking">Chunking</a></strong> — splitting
+      each document into smaller, overlapping pieces before embedding, so a match
+      points at a paragraph, not a whole file.</li>
+    <li><strong><a href="../glossary.html#rag">RAG</a></strong> — the whole pattern:
+      retrieve the most relevant chunks, inject <em>only</em> those into the
+      prompt, then generate.</li>
+  </ul>
+
+  <h3>Embeddings come from an AI model</h3>
+  <p>
+    An embedding isn't a formula — it's produced by a dedicated <strong>embedding
+    model</strong>, a neural network trained for one job: turn text into a vector
+    so that similar meanings land near each other. It's a real AI model, just a
+    different one from the chat LLM that writes the final answer. (Here the
+    embedding model is <code>nomic-embed-text</code>, run locally via Ollama; the
+    answer comes from Gemini.)
+  </p>
+  <div class="callout teal">
+    <span class="tag">The one rule that matters most</span>
+    <p>
+      Use the <strong>same embedding model</strong> for your documents and for the
+      query. Each model lays out its vector space differently, so a question
+      embedded by model A and a chunk embedded by model B simply aren't
+      comparable — "nearest" only means something when both sides came from the
+      <em>same</em> model. Swap the embedding model later, and you have to re-index
+      everything.
+    </p>
+  </div>
+
+  <h3>How RAG does the search</h3>
+  <p>
+    With every chunk turned into a vector, the search itself is simple. RAG embeds
+    your <strong>question</strong> into a vector with that same model, then asks
+    the store for the chunk-vectors <strong>closest</strong> to it — measured by
+    distance (this demo uses cosine distance). The nearest few are the chunks it
+    retrieves. There's no keyword matching anywhere: two passages match because
+    their <em>meanings</em> are close, so "how do I cancel async work?" can pull a
+    passage about <code>viewModelScope</code> it shares not a single word with.
+  </p>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 560 240" role="img"
+           aria-label="A 2D scatter plot used as intuition. Teal dots are document chunks about async/coroutines; orange dots are chunks about UI/Compose. A ringed point is the question 'how do I cancel async work', sitting inside the async cluster; dashed lines mark its three nearest chunks, which are the ones retrieved. A legend on the right labels each symbol.">
+        <rect x="20" y="16" width="358" height="212" rx="10" fill="var(--bg-soft)" stroke="var(--border)"/>
+        <text x="92" y="56" class="svg-sub" style="fill:var(--teal)">async / coroutines</text>
+        <circle class="svg-dot" cx="110" cy="80" r="6"/>
+        <circle class="svg-dot" cx="140" cy="108" r="6"/>
+        <circle class="svg-dot" cx="100" cy="130" r="6"/>
+        <circle class="svg-dot" cx="160" cy="74" r="6"/>
+        <text x="284" y="120" class="svg-sub" style="fill:var(--accent)">UI / Compose</text>
+        <circle class="svg-dot-a" cx="300" cy="165" r="6"/>
+        <circle class="svg-dot-a" cx="332" cy="145" r="6"/>
+        <circle class="svg-dot-a" cx="296" cy="195" r="6"/>
+        <circle class="svg-dot-a" cx="342" cy="180" r="6"/>
+        <line x1="126" y1="98" x2="110" y2="80" stroke="var(--text)" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <line x1="126" y1="98" x2="140" y2="108" stroke="var(--text)" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <line x1="126" y1="98" x2="160" y2="74" stroke="var(--text)" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <circle cx="126" cy="98" r="9" fill="none" stroke="var(--text)" stroke-width="2"/>
+        <text x="126" y="101" text-anchor="middle" style="font:700 11px sans-serif;fill:var(--text)">?</text>
+        <text x="150" y="152" style="font:600 11px sans-serif;fill:var(--text)">your question</text>
+        <!-- legend -->
+        <text x="398" y="32" class="svg-ph">LEGEND</text>
+        <circle class="svg-dot" cx="407" cy="54" r="6"/>
+        <text x="420" y="58" class="svg-sub">doc chunk · async</text>
+        <circle class="svg-dot-a" cx="407" cy="80" r="6"/>
+        <text x="420" y="84" class="svg-sub">doc chunk · UI</text>
+        <circle cx="407" cy="106" r="7" fill="none" stroke="var(--text)" stroke-width="2"/>
+        <text x="420" y="110" class="svg-sub">your question</text>
+        <line x1="399" y1="132" x2="415" y2="132" stroke="var(--text)" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <text x="420" y="136" class="svg-sub">nearest → retrieved</text>
+      </svg>
+    </div>
+    <figcaption>Real embeddings have <em>hundreds</em> of dimensions — this 2D picture is just intuition. The maths is the same: find the nearest points.</figcaption>
+  </figure>
+
+  <p>The same picture as data — the three nearest chunks are what get retrieved; the far cluster is ignored:</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Point in the picture</th><th>Topic</th><th>Distance</th><th>Retrieved?</th></tr></thead>
+    <tbody>
+      <tr><td>"Cancel a coroutine with <code>job.cancel()</code>"</td><td>async</td><td>0.12</td><td><span class="pill ok">✓ 1st</span></td></tr>
+      <tr><td>"<code>viewModelScope</code> cancels automatically"</td><td>async</td><td>0.18</td><td><span class="pill ok">✓ 2nd</span></td></tr>
+      <tr><td>"Structured concurrency basics"</td><td>async</td><td>0.21</td><td><span class="pill ok">✓ 3rd</span></td></tr>
+      <tr><td>"Recomposition in Compose"</td><td>UI</td><td>0.74</td><td><span class="pill">✗ too far</span></td></tr>
+      <tr><td>"<code>remember</code> vs <code>derivedStateOf</code>"</td><td>UI</td><td>0.81</td><td><span class="pill">✗ too far</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small muted">
+    Illustrative distances (smaller = closer in meaning). With <code>top_k = 3</code>
+    only the three nearest chunks go into the prompt; the far-off UI chunks never do.
+  </p>
+
+  <h3>The pipeline</h3>
+  <p>
+    Two halves run at different times, and the vector store is the bridge between
+    them — built once, queried over and over.
+  </p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 660 200" role="img"
+           aria-label="Index once: documents are chunked, embedded and stored. Per question: the question is embedded, the nearest chunks retrieved, injected into the prompt and answered.">
+        <defs>
+          <marker id="ah4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <text x="14" y="20" class="svg-ph">INDEX ONCE</text>
+        <rect class="svg-box-t" x="14"  y="30" width="110" height="44" rx="8"/>
+        <text x="69" y="50" class="svg-lbl" text-anchor="middle">Docs</text>
+        <text x="69" y="66" class="svg-sub" text-anchor="middle">.txt files</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M126 52 H156"/>
+        <rect class="svg-box" x="158" y="30" width="110" height="44" rx="8"/>
+        <text x="213" y="50" class="svg-lbl" text-anchor="middle">Chunk</text>
+        <text x="213" y="66" class="svg-sub" text-anchor="middle">overlapping</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M270 52 H300"/>
+        <rect class="svg-box" x="302" y="30" width="110" height="44" rx="8"/>
+        <text x="357" y="50" class="svg-lbl" text-anchor="middle">Embed</text>
+        <text x="357" y="66" class="svg-sub" text-anchor="middle">→ vectors</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M414 52 H444"/>
+        <rect class="svg-box-a" x="446" y="30" width="200" height="44" rx="8"/>
+        <text x="546" y="50" class="svg-lbl" text-anchor="middle">Vector store</text>
+        <text x="546" y="66" class="svg-sub" text-anchor="middle">ChromaDB</text>
+
+        <text x="14" y="120" class="svg-ph">PER QUESTION</text>
+        <rect class="svg-box-t" x="14"  y="130" width="110" height="44" rx="8"/>
+        <text x="69" y="150" class="svg-lbl" text-anchor="middle">Question</text>
+        <text x="69" y="166" class="svg-sub" text-anchor="middle">embed it too</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M126 152 H156"/>
+        <rect class="svg-box" x="158" y="130" width="150" height="44" rx="8"/>
+        <text x="233" y="150" class="svg-lbl" text-anchor="middle">Retrieve top-K</text>
+        <text x="233" y="166" class="svg-sub" text-anchor="middle">nearest chunks</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M310 152 H340"/>
+        <rect class="svg-box" x="342" y="130" width="150" height="44" rx="8"/>
+        <text x="417" y="150" class="svg-lbl" text-anchor="middle">Inject + ask</text>
+        <text x="417" y="166" class="svg-sub" text-anchor="middle">only those chunks</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M494 152 H524"/>
+        <rect class="svg-box-a" x="526" y="130" width="120" height="44" rx="8"/>
+        <text x="586" y="156" class="svg-lbl" text-anchor="middle">Answer</text>
+        <path class="svg-ar" marker-end="url(#ah4)" d="M546 76 L233 128" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+    <figcaption>The store is built once (top) and queried for every question (bottom).</figcaption>
+  </figure>
+  <p>
+    <strong>Index once (build time):</strong> read the documents, chunk each into
+    overlapping pieces, embed every chunk, and store the vectors — alongside the
+    original text and its source filename — in the vector store. You only redo this
+    when the documents change.
+  </p>
+  <p>
+    <strong>Per question (query time):</strong> embed the question with the same
+    model, ask the store for the top-K nearest chunk vectors, paste those chunk
+    texts into the prompt, and let the LLM answer grounded only in them. The model
+    never sees your whole corpus — just the handful of passages that matched.
+  </p>
+
+  <h3>How long is a vector? Dimensions by model</h3>
+  <p>
+    The length of an embedding is fixed by the model — every input it sees becomes
+    a vector of exactly that size. A few, for scale:
+  </p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Embedding model</th><th>Dimensions</th></tr></thead>
+    <tbody>
+      <tr><td>all-MiniLM-L6-v2 <span class="muted">(small, local)</span></td><td>384</td></tr>
+      <tr><td>nomic-embed-text <span class="muted">(this demo, via Ollama)</span></td><td>768</td></tr>
+      <tr><td>Google text-embedding-004</td><td>768</td></tr>
+      <tr><td>Cohere embed v3</td><td>1024</td></tr>
+      <tr><td>OpenAI text-embedding-3-small</td><td>1536</td></tr>
+      <tr><td>OpenAI text-embedding-3-large</td><td>3072</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small muted">
+    More dimensions can capture finer distinctions but cost more to store and
+    compare; some newer models even let you truncate the vector to trade a little
+    accuracy for size. Numbers move — check your model's current docs.
+  </p>
+
+  <h3>The questions I had about the vectors</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Who decides how many dimensions a vector has?</td>
+        <td>The <strong>embedding model</strong>, not you — it's a fixed property of
+          the model (the table above). You pick the model; the model fixes the
+          dimension count for every input.</td>
+      </tr>
+      <tr>
+        <td>Does one piece of text make one vector or many?</td>
+        <td>One piece of text → <strong>one</strong> vector. A query is a single
+          vector. A <em>document</em> becomes many vectors only because you chunk
+          it first — one vector per chunk.</td>
+      </tr>
+      <tr>
+        <td>What happens as the database keeps growing?</td>
+        <td>More chunks = more points to compare against. Comparing the query to
+          every point one by one gets slow, so vector stores use an
+          <strong>approximate-nearest-neighbour index</strong> (the demo's
+          <code>hnsw:space: cosine</code> setting) to stay fast. Storage grows with
+          the data; at real scale you reach for a dedicated vector database.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Gotchas &amp; lessons</h2>
+  <div class="callout">
+    <span class="tag">RAG needs scale to mean anything</span>
+    <p>
+      RAG is built for searching <em>at scale</em> — its whole job is picking the
+      best few chunks out of many. Two ways that quietly collapses on a tiny dataset:
+    </p>
+    <ul>
+      <li><strong>Too few chunks to choose from.</strong> Retrieval returns the
+        top-K nearest (here, 3). If you only have 3 chunks total, it returns all of
+        them — there's nothing to filter, so the "search" is meaningless. My first
+        runs did exactly this and listed every file for every question.</li>
+      <li><strong>Documents too short to chunk.</strong> Chunking only helps when a
+        document is long enough to split into several pieces. If each source is a
+        few lines, it stays a single chunk and the whole benefit disappears.</li>
+    </ul>
+    <p>
+      So RAG earns its keep on a large corpus of reasonably-long documents; on a
+      handful of short notes it's machinery doing nothing.
+    </p>
+  </div>
+
+  <h2>Where RAG actually fits today</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Use case</th><th>Still RAG?</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Document / knowledge-base Q&amp;A</td>
+        <td><span class="pill ok">Yes</span></td>
+        <td>The original sweet spot — large unstructured text where meaning-based
+            search beats keyword search.</td>
+      </tr>
+      <tr>
+        <td>AI web search</td>
+        <td><span class="pill ok">Yes, reframed</span></td>
+        <td>Same retrieve-then-generate shape, but the search engine's ranking
+            <em>is</em> the retrieval (see below).</td>
+      </tr>
+      <tr>
+        <td>Coding-agent code search &amp; memory</td>
+        <td><span class="pill warn">Mostly no</span></td>
+        <td>A real reversal: early tools embedded code, then moved away (see below).</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>How RAG hides inside AI web search</h3>
+  <p>
+    "Search the web" is mostly the <a href="stage3-tool-use.html">Stage 3</a> tool
+    loop wrapped around a search engine: the model writes keywords, the engine ranks
+    pages, snippets come back, the model answers. That ranking is "retrieval" in the
+    broad retrieve-then-generate sense — but it's the engine's own ranking, not
+    embeddings.
+  </p>
+  <p>
+    So where does the <em>embedding</em> RAG from this stage actually appear? Only
+    sometimes, and deeper in: when the agent opens one <strong>large</strong> page
+    and needs the relevant part of it, it <em>may</em> chunk and embed that single
+    page and pull the closest passages — classic RAG on one document. But it's
+    optional: with big context windows the model often just reads the page or the
+    snippets directly. The keyword search is always there; the embedding step is a
+    maybe.
+  </p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 640 180" role="img"
+           aria-label="The main flow runs along the top: your question goes to the model, which writes search keywords; the search engine ranks pages; the model answers from the results. A dashed arc loops back to refine the keywords. Below, an optional dashed branch shows that for one large page the agent may chunk and embed it to find the nearest passage — this highlighted step is the embedding-based RAG, and it is optional.">
+        <defs>
+          <marker id="ah4b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <path class="svg-ar" marker-end="url(#ah4b)" d="M576 38 V14 H192 V38" fill="none" stroke-dasharray="4 3"/>
+        <text x="384" y="11" class="svg-sub" text-anchor="middle">weak results? refine keywords &amp; search again</text>
+        <rect class="svg-box-t" x="8" y="40" width="92" height="46" rx="8"/>
+        <text x="54" y="67" class="svg-lbl" text-anchor="middle">Question</text>
+        <path class="svg-ar" marker-end="url(#ah4b)" d="M100 63 H122"/>
+        <rect class="svg-box-a" x="124" y="40" width="136" height="46" rx="8"/>
+        <text x="192" y="62" class="svg-lbl" text-anchor="middle">Model writes</text>
+        <text x="192" y="78" class="svg-sub" text-anchor="middle">search keywords</text>
+        <path class="svg-ar" marker-end="url(#ah4b)" d="M260 63 H282"/>
+        <rect class="svg-box" x="284" y="40" width="150" height="46" rx="8"/>
+        <text x="359" y="62" class="svg-lbl" text-anchor="middle">Search engine</text>
+        <text x="359" y="78" class="svg-sub" text-anchor="middle">ranks pages = retrieval</text>
+        <path class="svg-ar" marker-end="url(#ah4b)" d="M434 63 H518"/>
+        <rect class="svg-box-a" x="520" y="40" width="112" height="46" rx="8"/>
+        <text x="576" y="67" class="svg-lbl" text-anchor="middle">Model answers</text>
+        <path class="svg-ar" marker-end="url(#ah4b)" d="M370 86 V112" stroke-dasharray="4 3"/>
+        <rect class="svg-box-a" x="210" y="112" width="320" height="52" rx="8"/>
+        <text x="370" y="134" class="svg-lbl" text-anchor="middle">chunk + embed the page → nearest passage</text>
+        <text x="370" y="152" class="svg-sub" text-anchor="middle">optional: the embedding RAG — only for a large page</text>
+        <path class="svg-ar" marker-end="url(#ah4b)" d="M530 138 H576 V88" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+    <figcaption>The keyword search is always there; the highlighted embedding step is an optional extra for digging inside one big page.</figcaption>
+  </figure>
+
+  <h3>Coding agents and their own memory</h3>
+  <p>
+    One more place I expected embeddings and didn't find them: a coding agent's own
+    memory. It generally isn't vector-based — it's a static rules file loaded in
+    full, plus self-written notes, with a model judging which note is relevant for a
+    turn by reading filenames and short descriptions, not by cosine similarity. Same
+    direction as the code-search row in the table above: early tools embedded code
+    and searched it, then moved to plain grep/read as context windows grew and
+    because exact function and class names suit literal lookup over fuzzy matching.
+    When exact lookup plus a model's own judgement work, vector search isn't worth
+    its weight.
+  </p>
+  <p class="small muted">
+    The high-level mechanism is solid, but the deep internals of one such memory
+    system come from community analysis of a leaked build, not official docs — so
+    trust the shape, not the specifics.
+  </p>
+
+  <h2>The core mechanic, in code</h2>
+  <p>
+    Retrieval is just "embed the question, ask the store for the nearest vectors."
+    Everything clever about meaning is hidden inside that one comparison.
+  </p>
+  <span class="filemark">demos/04-rag-python/rag.py</span>
+<pre><code><span class="k">def</span> <span class="f">retrieve</span>(query, collection, top_k=<span class="n">3</span>):
+    query_vector = embed(query)                <span class="c"># same model that embedded the docs</span>
+
+    results = collection.query(
+        query_embeddings=[query_vector],
+        n_results=top_k,                       <span class="c"># only the K nearest chunks</span>
+        include=[<span class="s">"documents"</span>, <span class="s">"metadatas"</span>, <span class="s">"distances"</span>],
+    )
+    <span class="k">return</span> [{<span class="s">"text"</span>: d, <span class="s">"source"</span>: m[<span class="s">"source"</span>], <span class="s">"distance"</span>: dist}
+            <span class="k">for</span> d, m, dist <span class="k">in</span> zip(results[<span class="s">"documents"</span>][<span class="n">0</span>],
+                                   results[<span class="s">"metadatas"</span>][<span class="n">0</span>],
+                                   results[<span class="s">"distances"</span>][<span class="n">0</span>])]
+</code></pre>
+  <ol class="codewalk">
+    <li><b><code>embed(query)</code></b> turns the question into a vector using the
+      <em>same</em> embedding model that indexed the docs — they have to share a
+      coordinate space, or "nearest" is meaningless.</li>
+    <li><b><code>collection.query(...)</code></b> hands that vector to the store and
+      asks for the <code>top_k</code> closest chunks. The store does the
+      nearest-neighbour search; this is the entire "retrieval."</li>
+    <li><b><code>distances</code></b> come back too — a smaller distance means
+      closer in meaning. The lines I build from this are exactly what gets pasted
+      into the prompt for the model to answer from.</li>
+  </ol>
+
+  <div class="pager">
+    <a class="prev" href="stage3-tool-use.html"><span class="dir">&larr; Previous</span>Tool use</a>
+    <a class="next" href="stage5-mcp.html"><span class="dir">Next &rarr;</span>MCP</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Stage 4 of 6 · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

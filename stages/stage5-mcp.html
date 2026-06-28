@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 5 — MCP: connect any tool to any AI app</title>
+<meta name="description" content="MCP is the open standard from Anthropic that lets any AI app connect to any tool or data source. How the host, client, and server fit together, and how MCP tools, plain tools, and skills differ.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Stage 5</p>
+  <span class="stage-tag">Stage 5</span>
+  <h1>MCP — connect any tool to any AI app</h1>
+  <p class="lede">
+    Stage 3's tools lived inside one script. MCP is the standard that lets
+    <em>any</em> AI app reach <em>any</em> tool or data server — so a thing you
+    build once can plug into Claude Desktop, the CLI, or your own host.
+  </p>
+
+  <h2>What I built</h2>
+  <p>
+    A small MCP server that exposes my notes folder as three tools —
+    <code>list_notes</code>, <code>read_note</code>, <code>search_notes</code> —
+    that any MCP-speaking app can connect to and call. The same server can run two
+    ways (a local process or a networked server), which is the point: a server's
+    logic and its <a href="../glossary.html#transport">transport</a> are separate
+    concerns. The how-to-run details (and a gnarly Docker bug from building it) are
+    in the README.
+  </p>
+  <a class="demo-link" href="https://github.com/jacob-cn/ai-learning/tree/main/demos/05-mcp-python">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8a8 8 0 0 0 5.5 7.6c.4.1.5-.2.5-.4v-1.5c-2 .4-2.5-.5-2.7-1-.1-.3-.6-1-1-1.2-.3-.2-.7-.6 0-.6.6 0 1 .6 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A8 8 0 0 0 16 8c0-4.4-3.6-8-8-8Z"/></svg>
+    View the demo &amp; README on GitHub
+  </a>
+
+  <h2>A bit of history</h2>
+  <p>
+    MCP isn't a Google or Python thing — <strong>Anthropic introduced it in late
+    2024 and open-sourced the spec</strong>. Because it's open, other AI apps and
+    tool vendors adopted it rather than each inventing their own plug-in format,
+    and it's quickly become a de-facto common standard. That's the whole appeal: a
+    server you write to the standard works in any host that speaks it.
+  </p>
+
+  <h2>Key concepts</h2>
+  <h3>Three roles in one sentence</h3>
+  <p>
+    <a href="../glossary.html#mcp">MCP</a> (the Model Context Protocol) splits the
+    world into three <a href="../glossary.html#mcp-roles">roles</a>:
+  </p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Role</th><th>What it is</th><th>Who normally provides it</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Host</strong></td><td>The app the human uses — Claude Desktop, the CLI, an IDE.</td><td>The app vendor</td></tr>
+      <tr><td><strong>Client</strong></td><td>Built into the host; speaks the protocol to one server.</td><td>The app vendor</td></tr>
+      <tr><td><strong>Server</strong></td><td>Exposes tools or data over the protocol.</td><td>A tool/service provider or the community — or you, if you're wrapping your own data (as in this demo)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 540 200" role="img"
+           aria-label="The host app contains the model and a built-in client. The client speaks the MCP protocol (JSON-RPC) to the server, which you build; the server exposes your tools and data. The model decides; the client does the talking.">
+        <defs>
+          <marker id="ah5" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" class="svg-dot-a"/>
+          </marker>
+        </defs>
+        <rect class="svg-box" x="16" y="24" width="270" height="152" rx="12"/>
+        <text x="30" y="46" class="svg-ph">HOST — THE APP YOU USE</text>
+        <rect class="svg-box" x="34" y="58" width="110" height="48" rx="8"/>
+        <text x="89" y="80" class="svg-lbl" text-anchor="middle">LLM</text>
+        <text x="89" y="96" class="svg-sub" text-anchor="middle">the model</text>
+        <rect class="svg-box-a" x="158" y="58" width="110" height="48" rx="8"/>
+        <text x="213" y="80" class="svg-lbl" text-anchor="middle">Client</text>
+        <text x="213" y="96" class="svg-sub" text-anchor="middle">speaks MCP</text>
+        <path class="svg-ar" marker-end="url(#ah5)" d="M144 82 H156"/>
+        <text x="30" y="150" class="svg-sub">the model decides; the client does the talking</text>
+
+        <text x="322" y="74" class="svg-sub" text-anchor="middle">MCP · JSON-RPC</text>
+        <path class="svg-ar" marker-end="url(#ah5)" d="M270 82 H356"/>
+        <rect class="svg-box-t" x="358" y="58" width="150" height="48" rx="8"/>
+        <text x="433" y="80" class="svg-lbl" text-anchor="middle">Server</text>
+        <text x="433" y="96" class="svg-sub" text-anchor="middle">you build it</text>
+        <path class="svg-ar-t" marker-end="url(#ah5)" d="M433 106 V130"/>
+        <rect class="svg-box" x="358" y="132" width="150" height="44" rx="8"/>
+        <text x="433" y="152" class="svg-lbl" text-anchor="middle">Tools &amp; data</text>
+        <text x="433" y="168" class="svg-sub" text-anchor="middle">your notes folder</text>
+      </svg>
+    </div>
+    <figcaption>The app vendor builds the host + client; you build the server. The model never talks to the server — the client does.</figcaption>
+  </figure>
+
+  <h3>The protocol, concretely</h3>
+  <p>
+    Underneath it's just JSON-RPC 2.0 messages. A client calls
+    <code>tools/list</code> to discover what a server offers — name, description,
+    and a parameter schema, the exact same shape as a
+    <a href="stage3-tool-use.html">Stage 3</a> tool definition. To invoke one it
+    calls <code>tools/call</code> with the name and arguments, and the server
+    returns a result. The <a href="../glossary.html#tool-use">LLM</a> never talks
+    to the server directly — it only emits "call tool X with these args," and the
+    <strong>client</strong> inside the host is what actually sends the request.
+  </p>
+
+  <h3>To the model, all tools look the same</h3>
+  <p>
+    This is the insight that ties the stage together. Local functions (Stage 3) and
+    MCP tools get merged into <strong>one flat list</strong> before they reach the
+    model — identical shape either way. The model picks a tool purely by name and
+    description; it has no idea which is local and which lives on a remote server.
+    All the routing back to where a tool actually lives happens <em>after</em> the
+    model responds, in the host's private lookup table.
+  </p>
+  <p>
+    The practical consequence is the lesson below: names have to stay unique across
+    everything you connect.
+  </p>
+
+  <h2>Popular MCP servers</h2>
+  <p>
+    The reason MCP caught on is that you rarely have to build a server at all —
+    there's usually one already for whatever you want to connect. Anthropic ships a
+    set of reference servers, and there's a large ecosystem of community and vendor
+    ones on top. A sampler:
+  </p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Category</th><th>Example servers</th></tr></thead>
+    <tbody>
+      <tr><td>Files &amp; code</td><td>Filesystem, Git, GitHub / GitLab</td></tr>
+      <tr><td>Databases</td><td>PostgreSQL, SQLite</td></tr>
+      <tr><td>Web &amp; browser</td><td>Fetch, Brave Search, Puppeteer / Playwright</td></tr>
+      <tr><td>SaaS &amp; productivity</td><td>Slack, Google Drive, Notion, Linear, Stripe</td></tr>
+      <tr><td>Memory</td><td>Memory — a knowledge-graph store the agent writes to and reads back</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    Connect any of these and its tools simply join the same flat list the model
+    already sees — a GitHub server's <code>create_issue</code> ends up right next to
+    your own <code>read_note</code>, indistinguishable to the model. Those tools are
+    the very same name + description + schema shape from
+    <a href="stage3-tool-use.html">Stage 3</a>; that's the whole payoff of a shared
+    standard.
+  </p>
+  <p class="small muted">
+    Browse more: the
+    <a href="https://github.com/modelcontextprotocol/servers">official reference
+    servers</a> (Filesystem, Git, Fetch, Memory, …), the
+    <a href="https://registry.modelcontextprotocol.io/">official MCP Registry</a>,
+    and community directories like
+    <a href="https://mcpservers.org/">mcpservers.org</a> and
+    <a href="https://glama.ai/mcp/servers">Glama</a>. The ecosystem has grown into
+    the tens of thousands of servers since late 2024.
+  </p>
+
+  <h2>MCP, tools, and skills — what's the difference?</h2>
+  <p>
+    I kept conflating these. Untangling them:
+  </p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>What it is</th><th>To the model</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Plain tool</strong></td>
+        <td>A function wired directly into one app's own code.</td>
+        <td rowspan="2">Identical — both arrive as a name, description, and
+          parameter schema it can request. The model can't tell them apart.</td>
+      </tr>
+      <tr>
+        <td><strong>MCP tool</strong></td>
+        <td>A tool reached over the standard, so any host can connect it with no
+          bespoke integration code.</td>
+      </tr>
+      <tr>
+        <td><strong>Skill</strong></td>
+        <td>Lazily-loaded <em>instructions</em> for doing something.</td>
+        <td>Guidance, not a callable tool — and carrying it out still means calling
+          tools.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    In short: an MCP tool and a plain tool are the <strong>same kind of thing</strong>
+    — a capability the model can call, differing only in how they're wired up. A
+    skill isn't a capability at all; it's <strong>guidance</strong>, and acting on it
+    still comes down to calling tools. Capabilities and guidance combine — one
+    doesn't replace the other.
+  </p>
+
+  <h3>Living with MCP — lifecycle &amp; cost</h3>
+  <ul>
+    <li><strong>Add / remove isn't live.</strong> Changing the connected-server list
+      doesn't update a running session in real time. Depending on the agent, the
+      change lands only after you relaunch the app or start a new chat session.</li>
+    <li><strong>Updates can be live.</strong> An already-connected server can change
+      its tool list mid-session by pushing a
+      <code>notifications/tools/list_changed</code>, telling the client to
+      re-fetch <code>tools/list</code> without a restart.</li>
+    <li><strong>Context cost is real.</strong> Every connected server's tool
+      descriptions are sent on <em>every</em> request — the same context bloat from
+      <a href="stage3-tool-use.html">Stage 3</a>, but easier to trigger by
+      accident, since connecting one server can silently add 20+ tools at once.</li>
+  </ul>
+
+  <h2>Gotchas &amp; lessons</h2>
+  <div class="callout">
+    <span class="tag">Tool names must be globally unique</span>
+    <p>
+      Because the model sees every tool — local and MCP — in one flat list and
+      picks purely by name, two tools sharing a name make both the model's choice
+      <em>and</em> the host's routing ambiguous. Across everything you connect at
+      once, names have to be unique.
+    </p>
+  </div>
+
+  <h2>The core mechanic, in code</h2>
+  <p>
+    A factory builds the server once — tools and all — and the same server is then
+    served over whichever transport you pick.
+  </p>
+  <span class="filemark">demos/05-mcp-python/notes_core.py · run_stdio.py</span>
+<pre><code><span class="c"># notes_core.py — one factory builds the server, tools defined once</span>
+<span class="k">def</span> <span class="f">create_server</span>() -&gt; FastMCP:
+    mcp = FastMCP(<span class="s">"notes-server"</span>)
+
+    <span class="n">@mcp.tool()</span>
+    <span class="k">def</span> <span class="f">read_note</span>(filename: str) -&gt; str:
+        <span class="s">"""Read the full content of a specific note file by name."""</span>
+        ...
+    <span class="k">return</span> mcp
+
+<span class="c"># the SAME server, exposed over a chosen transport:</span>
+mcp = create_server()
+mcp.run(transport=<span class="s">"stdio"</span>)             <span class="c"># a local subprocess the host launches</span>
+<span class="c"># mcp.run(transport="streamable-http")  # a networked server apps connect to</span>
+</code></pre>
+  <ol class="codewalk">
+    <li><b>The factory</b> builds an identical server each call — the same tools,
+      the same logic — independent of how it'll be served.</li>
+    <li><b><code>@mcp.tool()</code></b> registers a normal Python function as an MCP
+      tool. The docstring becomes the description the model reads — so it's not a
+      comment, it's part of the interface.</li>
+    <li><b><code>mcp.run(transport=...)</code></b> picks how the server is exposed:
+      <code>"stdio"</code> runs it as a local subprocess the host spawns;
+      <code>"streamable-http"</code> runs it as a networked server apps connect to.
+      Same server, different door in — the network details live in the README.</li>
+  </ol>
+
+  <div class="pager">
+    <a class="prev" href="stage4-rag.html"><span class="dir">&larr; Previous</span>RAG &amp; embeddings</a>
+    <a class="next" href="stage6-agent.html"><span class="dir">Next &rarr;</span>ReAct agents</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Stage 5 of 6 · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

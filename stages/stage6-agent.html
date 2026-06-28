@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 6 — ReAct agents &amp; harness engineering</title>
+<meta name="description" content="What an agent actually is, an autonomous coding agent graded by a separate verifier, why ReAct's 'Reason' isn't the model's reasoning, and the fast-moving prompt → harness → loop vocabulary.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Stage 6</p>
+  <span class="stage-tag">Stage 6</span>
+  <h1>ReAct agents &amp; harness engineering</h1>
+  <p class="lede">
+    Everything so far converges here: a model that reasons out loud, acts on real
+    files without me approving each step, decides on its own when it's done — and
+    is then checked by a second model that doesn't trust it.
+  </p>
+
+  <h2>What I built</h2>
+  <p>
+    An autonomous coding agent in Python. Given one instruction ("add input
+    validation to <code>read_note</code>, here's what failure should look like"),
+    it reads the real file, makes a precise edit, and stops when it judges the goal
+    met — no human in the loop between steps. Then a <em>separate</em> model call,
+    shown only the goal and the final file, grades it PASS or FAIL.
+  </p>
+  <a class="demo-link" href="https://github.com/jacob-cn/ai-learning/tree/main/demos/06-agent-python">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8a8 8 0 0 0 5.5 7.6c.4.1.5-.2.5-.4v-1.5c-2 .4-2.5-.5-2.7-1-.1-.3-.6-1-1-1.2-.3-.2-.7-.6 0-.6.6 0 1 .6 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A8 8 0 0 0 16 8c0-4.4-3.6-8-8-8Z"/></svg>
+    View the demo &amp; README on GitHub
+  </a>
+
+  <h2>Key concepts</h2>
+  <h3>What's an "agent"?</h3>
+  <p>
+    Worth pinning down, since I've used the word loosely. On its own a model does one
+    thing: read text, predict the next text, stop — a single
+    <a href="../glossary.html#inference">inference</a> pass, with no memory or actions.
+    An <strong>agent</strong> wraps that one-shot model in a loop with tools and memory
+    so it can pursue a goal across many steps on its own: the model is the brain, and
+    the agent is everything around it that lets it act, remember, keep going, and check
+    its own work (the formal name for that wrapper is the
+    <a href="../glossary.html#harness">harness</a>). You've already built every piece —
+    this stage just names the whole.
+  </p>
+
+  <h3>ReAct is just one line in the prompt</h3>
+  <p>
+    I expected <a href="../glossary.html#react">ReAct</a> ("Reason + Act" — from a
+    2022 paper, <a href="https://arxiv.org/abs/2210.03629">Yao et al.</a>) to be a
+    library or a special API. It isn't. It's a single instruction asking the model
+    to write a brief <code>Thought:</code> before each tool call. Mechanically it's
+    the exact same <a href="stage3-tool-use.html">agent loop</a> from Stage 3 — the
+    only change is that the model's reasoning becomes visible text instead of an
+    opaque decision. That visibility is the point: when the agent misbehaves, you
+    can see <em>why</em>. (You'll see the actual one-line instruction in the code below.)
+  </p>
+
+  <h2>"Reason" in ReAct isn't the model's reasoning</h2>
+  <p>
+    ReAct stands for "Reason + Act," which tripped me up — because "reasoning" is also
+    the word for a model's trained
+    <a href="../glossary.html#extended-thinking">extended thinking</a>. They are not
+    the same thing:
+  </p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>ReAct's "Reason" — the <code>Thought:</code> line</th><th>The model's reasoning — extended thinking</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>What it is</strong></td>
+        <td>A <em>prompted</em> habit: you ask the model to type a one-sentence
+          <code>Thought:</code> before each tool call.</td>
+        <td>A <em>trained</em> capability: private step-by-step thinking the model does
+          before answering, baked in during training.</td>
+      </tr>
+      <tr>
+        <td><strong>Where it lives</strong></td>
+        <td>In your system prompt — works on any model.</td>
+        <td>In the model's weights — a toggle on capable models.</td>
+      </tr>
+      <tr>
+        <td><strong>Visible?</strong></td>
+        <td>Yes — it's plain output text; that's the whole point.</td>
+        <td>Usually hidden, or shown only summarized.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    They can even combine — a reasoning model running a ReAct prompt does both. And one
+    more word ties the room together:
+    <a href="../glossary.html#inference">inference</a> is just the umbrella act of
+    running the model to produce any output at all. Reasoning and tool-calling are
+    things that happen <em>during</em> an inference, not separate "modes" you switch
+    between.
+  </p>
+  <p>
+    And worth stressing about that tool-calling: emitting a structured
+    <code>function_call</code> is itself a <strong>trained</strong> capability, just
+    like reasoning. Early dialogue-only models couldn't reliably produce the exact
+    format — they'd write a plausible sentence <em>about</em> calling a tool instead.
+    Both abilities are baked into the model by training, not summoned by a clever
+    prompt alone.
+  </p>
+
+  <h2>A rapidly evolving vocabulary</h2>
+  <p>
+    Most of this stage's terminology is new — some of it named only months ago — and
+    it mostly sorts onto one ladder, where each rung answers "how much of the work
+    does the human still trigger, turn by turn?"
+  </p>
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 700 230" role="img"
+           aria-label="Four nested rungs, each broader and more autonomous than the last: prompt engineering, context engineering, harness engineering, loop engineering. The bottom two rungs — harness and loop — are bracketed as where the 'agent' concept begins.">
+        <rect class="svg-box" x="60" y="22" width="300" height="40" rx="8"/>
+        <text x="74" y="40" class="svg-lbl">Prompt engineering</text>
+        <text x="74" y="55" class="svg-sub">word one request well</text>
+        <rect class="svg-box" x="60" y="68" width="390" height="40" rx="8"/>
+        <text x="74" y="86" class="svg-lbl">Context engineering</text>
+        <text x="74" y="101" class="svg-sub">manage the window — history, RAG, memory</text>
+        <rect class="svg-box-a" x="60" y="114" width="490" height="40" rx="8"/>
+        <text x="74" y="132" class="svg-lbl">Harness engineering</text>
+        <text x="74" y="147" class="svg-sub">tools + memory + loop + verification around the model</text>
+        <rect class="svg-box-t" x="60" y="160" width="560" height="40" rx="8"/>
+        <text x="74" y="178" class="svg-lbl">Loop engineering</text>
+        <text x="74" y="193" class="svg-sub">an outer system runs the harness on a schedule, finds its own work</text>
+        <text x="28" y="120" class="svg-ph" transform="rotate(-90 28 120)">MORE AUTONOMOUS →</text>
+        <path class="svg-ar-t" d="M648 114 H660 V200 H648" fill="none"/>
+        <text x="678" y="157" class="svg-ph" style="fill:var(--teal)" transform="rotate(-90 678 157)">"AGENT" BEGINS</text>
+      </svg>
+    </div>
+    <figcaption>Each rung wraps the one above it. This stage's agent is the third rung — the harness.</figcaption>
+  </figure>
+  <p>
+    The split that matters: the top two rungs only shape a <em>single</em> response —
+    that's not an agent yet. The <strong>agent</strong> concept begins at the harness
+    rung, where a model runs in a loop with tools and memory, pursuing a goal across
+    many steps. This stage's agent is that third rung.
+  </p>
+  <p>
+    How new is all this? <strong>Harness engineering</strong> was named publicly
+    around February 2026 (Mitchell Hashimoto's "engineering the harness," quickly
+    picked up by OpenAI and Anthropic); <strong>loop engineering</strong> only in
+    June 2026 (Addy Osmani, building on Peter Steinberger and Anthropic's Boris
+    Cherny) — the latter explicitly "still early" and contested. The ideas moved
+    faster than the words for them.
+  </p>
+  <p class="small muted">
+    Further reading:
+    <a href="https://martinfowler.com/articles/harness-engineering.html">"Harness
+    engineering for coding agent users"</a> (Böckeler, martinfowler.com) and
+    <a href="https://addyosmani.com/blog/loop-engineering/">"Loop Engineering"</a>
+    (Addy Osmani).
+  </p>
+
+  <h3>Harness engineering: "Agent = Model + Harness"</h3>
+  <p>
+    The <a href="../glossary.html#harness">harness</a> is everything around the
+    model that makes it a working agent: tools to act, memory to remember, a loop
+    to keep going, verification to check the work, guardrails to stay safe. How much
+    does it matter? On the same benchmark, the <strong>same model</strong> scores
+    very differently depending only on its harness — one analysis found three agents
+    running an identical model landing ~5 points apart, and puts the typical swing
+    from harness choices alone at <strong>10–20 points</strong>
+    (<a href="https://www.digitalapplied.com/blog/swe-bench-verified-june-2026-benchmark-vs-scaffolding-analysis">SWE-bench
+    scaffolding analysis</a>).
+  </p>
+  <p>
+    It's not proof, but I saw the same separation first-hand. Mid-build I swapped the
+    model from Gemini Flash-Lite to Gemma (same hosted Google API, for better token
+    throughput). Because Gemma also has trained function-calling, my loop, tools, and
+    parsing all ran unchanged — I edited one model-name string. The harness had made
+    the two models more or less interchangeable behind it; that's the whole idea of
+    treating them as separate layers.
+  </p>
+
+  <h2>Gotchas &amp; lessons</h2>
+  <div class="callout">
+    <span class="tag">An agent hammers the rate limit</span>
+    <p>
+      A chat is one request per turn. An agent loop can call the model many times
+      for a <em>single</em> goal, and the context grows every round — so it's far
+      more demanding than a chatbot and hits
+      <a href="../glossary.html#rate-limits">rate limits</a> much faster. The
+      harness has to plan for that: pace the calls, retry on a 429, and cap every
+      tool result so the context can't balloon. (The exact limit numbers shift
+      without notice — always check your own provider dashboard, never an article.)
+    </p>
+  </div>
+  <div class="callout">
+    <span class="tag">Don't trust an agent's own "done"</span>
+    <p>
+      A model grading its own work overpraises it — so "done" reported by an agent is
+      a claim, not a proof. The fix is the
+      <a href="../glossary.html#generator-verifier">generator/verifier split</a>: a
+      separate, deliberately skeptical model checks the result, shown only the goal
+      and the final file, with no idea how the agent reasoned. In my run it
+      independently agreed the edit was correct — which is the only reason that "done"
+      meant anything.
+    </p>
+  </div>
+
+  <h2>The core mechanic, in code</h2>
+  <p>
+    First, the entire "ReAct" mechanism — it really is one instruction in the system
+    prompt:
+  </p>
+  <span class="filemark">demos/06-agent-python/agent.py</span>
+<pre><code>AGENT_SYSTEM_PROMPT = <span class="s">"""You are an autonomous coding agent.</span>
+<span class="s">... mission and rules ...</span>
+
+<span class="s">Before every tool call, briefly state your reasoning in one</span>
+<span class="s">sentence, prefixed with "Thought:". This is for the human</span>
+<span class="s">reading the trace, not for the user.</span>
+<span class="s">..."""</span>
+</code></pre>
+  <p>
+    That single <code>Thought:</code> line is all ReAct is. The rest is harness
+    plumbing — here, a guard that refuses to repeat a dead action, and the verifier as
+    a deliberately separate call:
+  </p>
+  <span class="filemark">demos/06-agent-python/agent.py</span>
+<pre><code><span class="c"># inside the loop — refuse to burn quota repeating a dead action</span>
+call_signature = (fc.name, json.dumps(args, sort_keys=<span class="n">True</span>))
+<span class="k">if</span> call_signature <span class="k">in</span> seen_calls:
+    result = (<span class="s">"You already called this exact tool with these exact "</span>
+              <span class="s">"arguments. Try something different or finish."</span>)
+<span class="k">else</span>:
+    seen_calls.add(call_signature)
+    result = _truncate(execute_tool(fc.name, args))   <span class="c"># cap the result size</span>
+
+<span class="c"># the verifier — a SEPARATE call, given only the goal + final file</span>
+<span class="k">def</span> <span class="f">verify</span>(goal, path):
+    content = _truncate(read_file(path), limit=<span class="n">4000</span>)
+    <span class="k">return</span> generate(
+        contents=<span class="s">f"GOAL: {goal}\n\nFILE ({path}):\n{content}"</span>,
+        system_instruction=VERIFIER_SYSTEM_PROMPT,
+    )  <span class="c"># it never sees the agent's reasoning — that's the point</span>
+</code></pre>
+  <ol class="codewalk">
+    <li><b>The system prompt</b> is where ReAct lives — one line asking for a
+      <code>Thought:</code> before each tool call. No library, no special API.</li>
+    <li><b>The call signature</b> is the tool name plus its exact arguments. If the
+      agent asks for the identical call again, that's usually a stuck loop.</li>
+    <li><b>The guard</b> doesn't run the repeat — it replies with a nudge to change
+      approach or finish, so a missing-file loop can't quietly drain the quota.</li>
+    <li><b><code>verify</code></b> is a <em>fresh</em> call with a skeptical system
+      prompt, given only the goal and the finished file. Because it never sees how
+      the agent reasoned, a PASS means something.</li>
+  </ol>
+
+  <h2>A different axis: Spec-Driven Development</h2>
+  <p>
+    One term I picked up doesn't belong on the ladder above at all. The
+    prompt→context→harness→loop progression all answers "how autonomous is the
+    agent." <a href="../glossary.html#sdd">Spec-Driven Development</a> answers a
+    different question — "how rigorously is intent specified <em>before</em> any
+    agent acts?" — by writing a structured, testable spec up front. Sources
+    genuinely disagree on whether it nests inside context engineering or pairs with
+    harness engineering, and there's no settled taxonomy yet. I'm noting it as a
+    lens rather than a rung; I haven't built a demo around it, so it may earn its
+    own page someday.
+  </p>
+
+  <div class="pager">
+    <a class="prev" href="stage5-mcp.html"><span class="dir">&larr; Previous</span>MCP</a>
+    <a class="next" href="stage-next.html"><span class="dir">Next &rarr;</span>Where this could go</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Stage 6 of 6 · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

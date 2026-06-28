@@ -1,0 +1,54 @@
+Jetpack Compose Best Practices
+
+Jetpack Compose is Android's modern declarative UI toolkit. Understanding how it works
+internally helps you write performant and correct Compose code.
+
+Recomposition
+
+Recomposition is the process by which Compose updates the UI when state changes. When
+a State object changes, Compose schedules recomposition of all composables that read
+that state. Minimize unnecessary recompositions by using stable types and structuring
+your composables correctly.
+
+A composable is stable if all its parameters are stable. Primitive types, Strings, and
+lambdas are stable. Custom classes annotated with @Stable or @Immutable are stable.
+Unstable types cause Compose to always recompose the composable even when its inputs
+have not changed.
+
+Use remember to cache expensive computations across recompositions. Use rememberSaveable
+to preserve state across both recompositions and configuration changes like screen rotation.
+rememberSaveable also survives process death if the value is a saveable type.
+
+Use derivedStateOf when a value is computed from other state objects. This tells Compose
+to only recompose when the derived value actually changes, not every time the source
+state changes. For example, use derivedStateOf to compute whether a button should be
+enabled based on form field states.
+
+State Hoisting
+
+State hoisting is the pattern of moving state up to the lowest common ancestor that
+needs it. Stateless composables are easier to test, preview, and reuse. Pass state
+down as parameters and events up as lambda callbacks. This is called unidirectional
+data flow and is the recommended pattern in Compose.
+
+Side Effects
+
+Side effects in Compose must be handled with the correct effect handler. Use
+LaunchedEffect to run suspending functions or start coroutines tied to the composable
+lifecycle. Use SideEffect to synchronize Compose state with non-Compose code on every
+successful recomposition. Use DisposableEffect for effects that require cleanup when
+the composable leaves the composition, such as registering and unregistering listeners.
+
+Never perform side effects directly in the composable body. The body may be called
+multiple times during a single frame and at unpredictable times, so any side effects
+in the body will produce incorrect behavior.
+
+Performance Tips
+
+Avoid reading State in the wrong phase. Read state as late as possible in the layout
+and drawing phases to minimize the scope of recomposition. Use lambda modifiers like
+Modifier.offset to defer state reads to the drawing phase entirely.
+
+Use the Compose compiler metrics to identify unstable composables and unnecessary
+recompositions in your app. Enable them in your build.gradle and analyze the output
+to find optimization opportunities.

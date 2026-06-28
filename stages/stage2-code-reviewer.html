@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 2 — Structured output &amp; prompt engineering</title>
+<meta name="description" content="An Android code reviewer that returns strict JSON instead of prose. Why a prompt is a strong nudge but never a guarantee — and how system prompts actually stack in layers.">
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="../index.html#stages">Stages</a>
+      <a href="../glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="../index.html">Home</a> / Stage 2</p>
+  <span class="stage-tag">Stage 2</span>
+  <h1>Structured output &amp; prompt engineering</h1>
+  <p class="lede">
+    A chatbot returns prose. Real software needs <em>data</em>. This stage was
+    about making the model hand back something my code can parse — and learning
+    that "please return JSON" is a request, not a contract.
+  </p>
+
+  <h2>What I built</h2>
+  <p>
+    An Android code reviewer in TypeScript. You paste a chunk of Kotlin, and it
+    returns a structured review: a score out of ten, a verdict, and a list of
+    issues each tagged with a severity and category. Not a paragraph of feedback —
+    a JSON object I can render, sort, or gate a CI check on.
+  </p>
+  <a class="demo-link" href="https://github.com/jacob-cn/ai-learning/tree/main/demos/02-code-reviewer-typescript">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8a8 8 0 0 0 5.5 7.6c.4.1.5-.2.5-.4v-1.5c-2 .4-2.5-.5-2.7-1-.1-.3-.6-1-1-1.2-.3-.2-.7-.6 0-.6.6 0 1 .6 1.2.8.7 1.2 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.4 7.4 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.5.8 1.2.8 2.1 0 3.1-1.9 3.8-3.6 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A8 8 0 0 0 16 8c0-4.4-3.6-8-8-8Z"/></svg>
+    View the demo &amp; README on GitHub
+  </a>
+
+  <h2>Key concepts</h2>
+  <h3>Structured output</h3>
+  <p>
+    <a href="../glossary.html#structured-output">Structured output</a> means asking
+    the model to return data in a defined shape — here, a specific JSON object. The
+    trick that makes it reliable lives in the
+    <a href="../glossary.html#system-prompt">system prompt</a>: I don't describe
+    the format in prose, I paste the literal JSON skeleton I want back — fields and
+    allowed values and all — and end with "Return ONLY the JSON. No markdown, no
+    explanation, no backticks."
+  </p>
+
+  <h3>Prompt engineering</h3>
+  <p>
+    That precision <em>is</em>
+    <a href="../glossary.html#prompt-engineering">prompt engineering</a>: wording
+    instructions so the model behaves predictably. A vague ask gets vague,
+    inconsistent output; an exact schema plus explicit "do not" rules is the
+    difference between parseable-every-time and works-in-the-demo.
+  </p>
+
+  <h2>Gotchas &amp; lessons</h2>
+  <div class="callout">
+    <span class="tag">A prompt is a nudge, not a guarantee</span>
+    <p>
+      I told the model, in capital letters, to return only JSON with no backticks.
+      It mostly obeyed — and then occasionally wrapped the whole thing in a
+      <code>```json</code> fence anyway, breaking the parse. The lesson isn't
+      "write a firmer prompt." It's that an instruction is a <strong>strong
+      nudge</strong> the model usually follows but can ignore.
+    </p>
+    <p>
+      The real guarantee is <strong>code</strong>. I strip any stray fences before
+      parsing, keep the parse in a <code>try/catch</code>, and only trust the
+      result once it has parsed into a typed object. The prompt aims for the right
+      output; the code is what makes the program safe when the aim is off.
+    </p>
+  </div>
+  <div class="callout teal">
+    <span class="tag">Since then: the API can enforce it</span>
+    <p>
+      This demo uses the prompt-only approach because it shows the underlying
+      problem. But most providers now offer <strong>enforced structured output</strong>
+      — Gemini's <code>responseSchema</code> / JSON mode, OpenAI's structured
+      outputs — where you hand the API a schema and the reply is <em>guaranteed</em>
+      to parse and match it: no stray fences, no defensive stripping. When you build
+      for real, reach for that and check your provider's
+      <a href="https://ai.google.dev/gemini-api/docs/structured-output">structured-output
+      docs</a>; treat the prompt-and-parse version here as the lesson in <em>why</em>
+      that feature exists.
+    </p>
+  </div>
+
+  <h2>System prompts stack in layers</h2>
+  <p>
+    Writing my own system prompt made me realize it's rarely the only one. By the
+    time a request reaches the model, several layers can be stacked on top of each
+    other — and you control only some of them.
+  </p>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 560 220" role="img"
+           aria-label="Three stacked system-prompt layers reaching the model: your own prompt (visible and editable), the host app's prompt such as an IDE extension (often inspectable), and the provider's backend safety layer (hidden and fixed).">
+        <rect class="svg-box-a" x="60" y="30" width="440" height="46" rx="9"/>
+        <text x="80" y="52" class="svg-lbl">Your system prompt</text>
+        <text x="80" y="68" class="svg-sub">written in your code — fully visible &amp; editable</text>
+        <text x="480" y="58" class="svg-ph" text-anchor="end">YOURS</text>
+
+        <rect class="svg-box-t" x="60" y="86" width="440" height="46" rx="9"/>
+        <text x="80" y="108" class="svg-lbl">Host / app prompt</text>
+        <text x="80" y="124" class="svg-sub">added by the tool — e.g. an IDE extension; often inspectable</text>
+        <text x="480" y="114" class="svg-ph" text-anchor="end" style="fill:var(--teal)">APP</text>
+
+        <rect class="svg-box" x="60" y="142" width="440" height="46" rx="9"/>
+        <text x="80" y="164" class="svg-lbl">Provider / backend layer</text>
+        <text x="80" y="180" class="svg-sub">safety &amp; behaviour, injected server-side — hidden &amp; fixed</text>
+        <text x="480" y="170" class="svg-ph" text-anchor="end" style="fill:var(--text-soft)">HIDDEN</text>
+
+        <text x="280" y="210" class="svg-sub" text-anchor="middle">all three reach the model as one combined instruction set</text>
+      </svg>
+    </div>
+    <figcaption>You own the top layer. The app adds the middle. The provider's layer you usually can't see or change.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>You can sometimes inspect the app layer.</strong> VS&nbsp;Code's
+      Copilot Chat, for instance, has a "Show Chat Debug View" that reveals the exact
+      context it sends; some other tools expose it only in their logs, and many don't
+      expose it at all. Where you <em>can</em> see it, it's a great way to learn how a
+      good agent prompt is written.</li>
+    <li><strong>You usually can't touch the provider layer.</strong> Safety and
+      behaviour instructions injected on the backend aren't visible or editable —
+      so never assume the model is seeing <em>only</em> your prompt.</li>
+    <li><strong>Layers can be attacked.</strong> Crafted user input can try to
+      override or reveal a system prompt — "prompt injection" / jailbreaking. The
+      defensive takeaway: never put a secret in a system prompt, and never assume
+      its rules are unbreakable.</li>
+  </ul>
+
+  <h2>The core mechanic, in code</h2>
+  <p>
+    Two halves: a system prompt carrying the exact schema, and a parse step that
+    sanitizes before it trusts. Here's the second half — the part that turns "the
+    model usually returns JSON" into "my program always gets a typed object or a
+    handled error."
+  </p>
+  <span class="filemark">demos/02-code-reviewer-typescript/code-reviewer.ts</span>
+<pre><code><span class="k">interface</span> <span class="f">ReviewResult</span> {        <span class="c"># the exact shape I expect back</span>
+  summary: <span class="f">string</span>;
+  score: <span class="f">number</span>;
+  issues: <span class="f">CodeIssue</span>[];
+  verdict: <span class="s">"approve"</span> | <span class="s">"approve_with_changes"</span> | <span class="s">"request_changes"</span>;
+}
+
+<span class="k">async function</span> <span class="f">reviewCode</span>(code: <span class="f">string</span>): <span class="f">Promise</span>&lt;<span class="f">ReviewResult</span>&gt; {
+  <span class="k">const</span> result = <span class="k">await</span> model.generateContent(code);
+  <span class="k">const</span> text = result.response.text();
+
+  <span class="k">const</span> cleaned = text.replace(<span class="s">/```json|```/g</span>, <span class="s">""</span>).trim();
+  <span class="k">return</span> JSON.parse(cleaned) <span class="k">as</span> <span class="f">ReviewResult</span>;
+}
+</code></pre>
+  <ol class="codewalk">
+    <li><b>The <code>interface</code></b> is a contract written in the code, not in
+      the prompt: a valid review must have a summary, a numeric score, a list of
+      issues, and one of three exact verdict strings.</li>
+    <li><b>The model is called</b> with the pasted code; what comes back is just
+      text — untrusted until proven otherwise.</li>
+    <li><b>The <code>.replace(...)</code> line</b> strips any markdown fences the
+      model added despite being told not to. This single line is the "nudge, not
+      guarantee" lesson made concrete.</li>
+    <li><b><code>JSON.parse(...) as ReviewResult</code></b> is the moment of trust:
+      the raw text only becomes a typed object if it actually parses. If it
+      doesn't, this throws — a handled error, never a silent bad value.</li>
+  </ol>
+
+  <div class="pager">
+    <a class="prev" href="stage1-chatbot.html"><span class="dir">&larr; Previous</span>The context window</a>
+    <a class="next" href="stage3-tool-use.html"><span class="dir">Next &rarr;</span>Tool use</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">Stage 2 of 6 · <a href="../glossary.html">Glossary</a> · <a href="../index.html">Home</a></div>
+</footer>
+
+</body>
+</html>

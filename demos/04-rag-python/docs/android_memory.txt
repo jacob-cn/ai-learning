@@ -1,0 +1,37 @@
+Android Memory Management Guide
+
+OutOfMemoryError occurs when the app requests more memory than the JVM heap can provide.
+This is one of the most common crashes in Android applications and requires careful
+management of memory resources throughout the app lifecycle.
+
+Common Causes of Memory Issues
+
+Memory leaks are the most frequent cause of OOM errors. A memory leak happens when
+objects are no longer needed but cannot be garbage collected because references still
+exist. Common sources include static references to Activity or Context objects,
+anonymous inner classes and non-static inner classes that hold implicit references
+to the outer class, and listeners or callbacks that are registered but never unregistered.
+
+To fix memory leaks, use WeakReference when you need to hold a reference to a Context
+in a long-lived object. Always unregister listeners and broadcast receivers in onDestroy
+or onStop. Use the Android Profiler in Android Studio to detect heap growth over time.
+LeakCanary is an excellent library that automatically detects and reports memory leaks
+during development.
+
+Bitmap Memory Management
+
+Bitmap handling is the second most common source of OOM errors. A full resolution
+camera image can easily consume 20-30MB of heap memory. Always use BitmapFactory.Options
+with inSampleSize to downsample large images before loading them into memory. Calculate
+the appropriate inSampleSize by comparing the image dimensions to the target view size.
+
+Consider using Glide or Coil which handle bitmap memory management automatically.
+They implement memory caching, disk caching, and automatic bitmap recycling. Coil
+is the modern Kotlin-first choice and integrates well with Jetpack Compose.
+
+Android Profiler
+
+Android Studio's Memory Profiler lets you observe heap allocations in real time,
+take heap dumps to inspect which objects are consuming memory, and track allocations
+by stack trace. Use it regularly during development, not just when crashes occur.
+The profiler can reveal gradual memory growth that leads to OOM errors over time.

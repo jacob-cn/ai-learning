@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Learning Journey — from first API call to a working agent</title>
+<meta name="description" content="Notes on learning AI development by building — from the first API call to a working autonomous agent. Six stages, real code, real lessons.">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="#stages">Stages</a>
+      <a href="glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero wrap">
+    <span class="eyebrow">Learning AI by building</span>
+    <h1>From first API call to a working agent.</h1>
+    <p class="lede">
+      These are my real, unsanitized notes on learning AI development — one small
+      build per stage, broken and fixed in public, with the part that didn't work
+      the first time left in.
+    </p>
+    <div>
+      <a class="cta" href="stages/stage1-chatbot.html">Start the journey</a>
+      <a class="cta ghost" href="glossary.html">Browse the glossary</a>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="section-head" id="stages">
+      <h2>The six stages</h2>
+      <p>Each one builds on the last. Each has a runnable demo and at least one honest lesson.</p>
+    </div>
+
+    <ul class="timeline">
+      <li>
+        <a class="stage-card" href="stages/stage1-chatbot.html">
+          <span class="num">1</span>
+          <span class="body">
+            <h3>Multi-turn chatbot &amp; the context window</h3>
+            <p>A chatbot in a terminal — and the realization that a model has no
+               memory at all. "Memory" is just resending the whole conversation
+               every call.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="stage-card" href="stages/stage2-code-reviewer.html">
+          <span class="num">2</span>
+          <span class="body">
+            <h3>Structured output &amp; prompt engineering</h3>
+            <p>A code reviewer that returns strict JSON, not prose — and why a
+               prompt is only ever a strong nudge, never a guarantee.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="stage-card" href="stages/stage3-tool-use.html">
+          <span class="num">3</span>
+          <span class="body">
+            <h3>Tool use / function calling</h3>
+            <p>A dev assistant that reads files and searches code. The model only
+               <em>requests</em> a tool; my code is what actually runs it.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="stage-card" href="stages/stage4-rag.html">
+          <span class="num">4</span>
+          <span class="body">
+            <h3>RAG &amp; embeddings</h3>
+            <p>Chat with my own docs: chunk, embed, and retrieve only the relevant
+               pieces — instead of stuffing every document into the prompt.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="stage-card" href="stages/stage5-mcp.html">
+          <span class="num">5</span>
+          <span class="body">
+            <h3>MCP — connect any tool to any AI app</h3>
+            <p>One notes server, two transports, and the open standard that lets
+               any AI app reach any tool without custom glue code.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="stage-card" href="stages/stage6-agent.html">
+          <span class="num">6</span>
+          <span class="body">
+            <h3>ReAct agents &amp; harness engineering</h3>
+            <p>An autonomous coding agent that edits real files, decides when it's
+               done, and is graded by a separate, skeptical verifier model.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="stage-card next" href="stages/stage-next.html">
+          <span class="num">&rarr;</span>
+          <span class="body">
+            <h3>Where this could go</h3>
+            <p>Where the journey is heading — the directions I'm reading into but
+               haven't built yet. Always the page after the latest stage.</p>
+          </span>
+          <span class="go">&rarr;</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="section-head" id="how-this-site-is-built">
+      <h2>How this site is built</h2>
+      <p>The site is itself a small example of the ideas it documents.</p>
+    </div>
+    <p>
+      It's <a href="stages/stage6-agent.html">harness engineering</a> applied to a
+      writing project instead of a coding agent — three plain files doing the work:
+    </p>
+    <div class="howcards">
+      <div class="howcard">
+        <h4><code>CLAUDE.md</code></h4>
+        <p>The living source of truth — durable rules and a registry of which stages exist.</p>
+      </div>
+      <div class="howcard">
+        <h4><code>SPEC.md</code></h4>
+        <p>The original one-time brief, written up front and then never edited again.</p>
+      </div>
+      <div class="howcard">
+        <h4><code>demos/…/README</code></h4>
+        <p>Every demo carries the same three sections: Setup, Run, and What to check.</p>
+      </div>
+    </div>
+    <p>
+      New to the vocabulary? The <a href="glossary.html">glossary</a> defines every
+      term used across the stages in one place.
+    </p>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Written as I learned, for future-me and any engineer eyeing the same path.
+    Every demo is real, runnable code from the journey.
+    <span class="small">· v1.0.0</span>
+  </div>
+</footer>
+
+</body>
+</html>

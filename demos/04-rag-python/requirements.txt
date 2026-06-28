@@ -1,0 +1,5 @@
+# The Ollama app and the nomic-embed-text model are installed separately — see README.
+google-genai==2.10.0
+python-dotenv==1.2.2
+chromadb==1.5.9
+ollama==0.6.2

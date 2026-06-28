@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary — AI Learning Journey</title>
+<meta name="description" content="Canonical definitions for every term used across the AI Learning Journey: tokens, context window, tool use, RAG, MCP, ReAct, harness engineering and more. Sorted A–Z with a jump-to index.">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/theme.js"></script>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html">AI&nbsp;Learning&nbsp;<span class="dot">Journey</span></a>
+    <nav>
+      <a href="index.html#stages">Stages</a>
+      <a href="glossary.html">Glossary</a>
+      <button class="theme-toggle" type="button" hidden><span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">Auto</span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <p class="crumb"><a href="index.html">Home</a> / Glossary</p>
+  <h1>Glossary</h1>
+  <p class="lede">
+    Every term used across the stages, defined once and used consistently, listed
+    A–Z. Where a term has a common synonym, it's noted on first mention, then
+    dropped in favor of the canonical name.
+  </p>
+
+  <nav class="gloss-index" aria-label="Jump to a term">
+    <a href="#agent-loop">Agent loop</a>
+    <a href="#chunking">Chunking</a>
+    <a href="#context-compaction">Context compaction</a>
+    <a href="#context-window">Context window</a>
+    <a href="#embedding">Embedding</a>
+    <a href="#extended-thinking">Extended thinking</a>
+    <a href="#generator-verifier">Generator/verifier split</a>
+    <a href="#harness">Harness</a>
+    <a href="#inference">Inference</a>
+    <a href="#loop-engineering">Loop engineering</a>
+    <a href="#mcp">MCP</a>
+    <a href="#mcp-roles">MCP host / client / server</a>
+    <a href="#prompt-engineering">Prompt engineering</a>
+    <a href="#rag">RAG</a>
+    <a href="#rate-limits">Rate limits</a>
+    <a href="#react">ReAct</a>
+    <a href="#sdd">Spec-Driven Development</a>
+    <a href="#structured-output">Structured output</a>
+    <a href="#system-prompt">System prompt</a>
+    <a href="#token">Token</a>
+    <a href="#tool-use">Tool use</a>
+    <a href="#transport">Transport</a>
+  </nav>
+
+  <dl class="gloss">
+
+    <dt id="agent-loop">Agent loop</dt>
+    <dd>The cycle that makes tool use useful: send request → model requests a
+      tool → execute it → return the result → repeat until the model answers. <span class="where"><a href="stages/stage3-tool-use.html">First appears: Stage 3</a></span></dd>
+
+    <dt id="chunking">Chunking</dt>
+    <dd>Splitting a long document into smaller, overlapping pieces before
+      embedding, so retrieval can return a relevant <em>section</em> rather than
+      a whole file. <span class="where"><a href="stages/stage4-rag.html">First appears: Stage 4</a></span></dd>
+
+    <dt id="context-compaction">Context compaction</dt>
+    <dd>Summarizing the earlier conversation into a compact form as the context
+      window fills — keeping decisions, facts, and current state while dropping
+      verbatim detail — so a session continues smoothly instead of erroring or
+      bluntly dropping history. Also called context compression. <span class="where"><a href="stages/stage3-tool-use.html">First appears: Stage 3</a></span></dd>
+
+    <dt id="context-window">Context window</dt>
+    <dd>The total amount of text a model can consider in one request — the
+      conversation history, system prompt, retrieved documents and the new
+      message all share this single budget. <span class="where"><a href="stages/stage1-chatbot.html">First appears: Stage 1</a></span></dd>
+
+    <dt id="embedding">Embedding</dt>
+    <dd>A numeric vector representation of text. Similar meanings produce similar
+      numbers, which is what makes semantic search possible. <span class="where"><a href="stages/stage4-rag.html">First appears: Stage 4</a></span></dd>
+
+    <dt id="extended-thinking">Extended thinking</dt>
+    <dd>A trained model capability that produces private reasoning before any
+      answer. It's a toggle on a capable model, not a prompt you write, and is
+      distinct from ReAct's visible <code>Thought:</code> lines. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="generator-verifier">Generator/verifier split</dt>
+    <dd>A separate, deliberately skeptical model checks whether a claimed "done"
+      is actually correct — because a model grading its own work tends to
+      overpraise it. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="harness">Harness</dt>
+    <dd>Everything around a model that makes it a working agent: tools to act,
+      memory to remember, a loop to keep going, verification to check the work,
+      and guardrails to stay safe. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="inference">Inference</dt>
+    <dd>Running a trained model to produce any output at all. The opposite of
+      "training" — <em>not</em> the opposite of "thinking." <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="loop-engineering">Loop engineering</dt>
+    <dd>An outer system that runs an agent's harness on a schedule across many
+      runs — finding its own work and deciding when to stop. Very new and
+      contested terminology. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="mcp">MCP</dt>
+    <dd>The Model Context Protocol — an open standard that lets any AI app
+      connect to any tool or data server without writing custom integration code
+      for each one. <span class="where"><a href="stages/stage5-mcp.html">First appears: Stage 5</a></span></dd>
+
+    <dt id="mcp-roles">MCP host / client / server</dt>
+    <dd>Three roles in one sentence: the <strong>host</strong> is the app (e.g.
+      Claude Desktop); the <strong>client</strong> is built into the host and
+      speaks the protocol; the <strong>server</strong> is what you build and
+      expose. <span class="where"><a href="stages/stage5-mcp.html">First appears: Stage 5</a></span></dd>
+
+    <dt id="prompt-engineering">Prompt engineering</dt>
+    <dd>Wording instructions so a model behaves predictably — being explicit
+      about format, constraints and what <em>not</em> to do. <span class="where"><a href="stages/stage2-code-reviewer.html">First appears: Stage 2</a></span></dd>
+
+    <dt id="rag">RAG</dt>
+    <dd>Retrieval-Augmented Generation: retrieving the most relevant chunks of
+      your data and injecting only those into the prompt, instead of dumping
+      everything into context. <span class="where"><a href="stages/stage4-rag.html">First appears: Stage 4</a></span></dd>
+
+    <dt id="rate-limits">Rate limits (RPM / TPM / RPD)</dt>
+    <dd>Three independent API caps — requests per minute, tokens per minute, and
+      requests per day — each of which fails differently and is fixed
+      differently. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="react">ReAct</dt>
+    <dd>"Reason + Act" — a prompted pattern that makes the model state a brief
+      reason before each tool call, turning an opaque decision into visible text. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="sdd">Spec-Driven Development</dt>
+    <dd>Writing a structured, testable specification of intent <em>before</em> an
+      agent acts — a separate axis from how autonomous the agent is. <span class="where"><a href="stages/stage6-agent.html">First appears: Stage 6</a></span></dd>
+
+    <dt id="structured-output">Structured output</dt>
+    <dd>Asking a model to return data in a defined format (typically JSON)
+      instead of free-form prose, so your code can parse it. <span class="where"><a href="stages/stage2-code-reviewer.html">First appears: Stage 2</a></span></dd>
+
+    <dt id="system-prompt">System prompt</dt>
+    <dd>A persistent instruction set, kept separate from the back-and-forth of
+      the conversation, that sets the model's role and rules. <span class="where"><a href="stages/stage1-chatbot.html">First appears: Stage 1</a></span></dd>
+
+    <dt id="token">Token</dt>
+    <dd>The basic unit of text an LLM processes — a <em>subword</em> piece from a
+      fixed vocabulary (common words are one token; rarer ones split into several),
+      averaging ~4 characters of English. Pricing and context limits are both
+      counted in tokens. <span class="where"><a href="stages/stage1-chatbot.html">First appears: Stage 1</a></span></dd>
+
+    <dt id="tool-use">Tool use <span class="muted">(a.k.a. function calling)</span></dt>
+    <dd>Giving a model a set of described functions it can request. The model
+      never executes them itself — it asks, and your code runs them. <span class="where"><a href="stages/stage3-tool-use.html">First appears: Stage 3</a></span></dd>
+
+    <dt id="transport">Transport (stdio / HTTP)</dt>
+    <dd>How the client and server talk. <strong>stdio</strong> launches the
+      server as a local subprocess; <strong>HTTP</strong> connects to a server
+      already running independently (local or remote). <span class="where"><a href="stages/stage5-mcp.html">First appears: Stage 5</a></span></dd>
+
+  </dl>
+
+  <div class="pager">
+    <a class="next" href="index.html"><span class="dir">Back to</span>Home</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    These are the canonical terms used throughout the journey — if a stage page
+    and this list ever disagree, this list is the one to trust.
+  </div>
+</footer>
+
+</body>
+</html>
