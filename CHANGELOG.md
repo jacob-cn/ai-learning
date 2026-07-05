@@ -5,6 +5,15 @@ replacement for git history. Add a new entry whenever a stage is added or
 meaningfully changed. Newest entry at the top; tagged releases use a
 `## vX.Y.Z — date` header (Semantic Versioning).
 
+## v1.1.0 — 2026-07-06
+- Fixed the theme-toggle button wrapping to a second line on narrow screens (e.g.
+  Android Chrome): the nav is now a non-wrapping flex row, the icon has a fixed
+  width so it no longer shifts between Auto/Light/Dark, and mobile spacing is tighter.
+- Added a "Tested on …" line (Python 3.14.6 · macOS 15.7.7) at the top of each demo's
+  Screenshot section.
+- Stopped hard-coding the current version in CLAUDE.md — it now points to the
+  CHANGELOG header / home-page footer as the source of truth.
+
 ## v1.0.1 — 2026-06-28
 - Added a top-level project `README.md` (overview, live link, how to run a demo).
 - Added `.nojekyll` so GitHub Pages serves the static files as-is (skips Jekyll).

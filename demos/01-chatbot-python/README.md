@@ -32,4 +32,6 @@ python3 chatbot.py
   shadow it.
 
 ## Screenshot
+_Tested on Python 3.14.6 · macOS 15.7.7._
+
 ![Multi-turn chatbot in the terminal, with the per-turn "messages sent / tokens of context" counter](assets/screenshot01.png)

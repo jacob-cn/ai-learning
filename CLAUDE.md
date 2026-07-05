@@ -65,7 +65,9 @@ to it.
 
 ## Versioning
 
-Follow Semantic Versioning (semver.org), `MAJOR.MINOR.PATCH`. Current: **v1.0.1**.
+Follow Semantic Versioning (semver.org), `MAJOR.MINOR.PATCH`. The current version is
+whatever the top CHANGELOG header and the home-page footer say — read it from there,
+don't hard-code it in this file.
 - **PATCH** (x.y.Z) — typo/wording/factual fixes, small style tweaks; no new content
 - **MINOR** (x.Y.0) — backward-compatible additions: a new stage, section, demo, or
   feature (e.g. the theme toggle)

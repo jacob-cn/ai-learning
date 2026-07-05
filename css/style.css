@@ -99,7 +99,8 @@ body {
 }
 .brand { font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.01em; }
 .brand .dot { color: var(--accent); }
-.topbar nav a { color: var(--text-soft); text-decoration: none; font-size: 0.92rem; margin-left: 18px; }
+.topbar nav { display: flex; align-items: center; flex-wrap: nowrap; }
+.topbar nav a { color: var(--text-soft); text-decoration: none; font-size: 0.92rem; margin-left: 18px; white-space: nowrap; }
 .topbar nav a:hover { color: var(--accent); }
 .theme-toggle {
   display: inline-flex; align-items: center; gap: 6px; vertical-align: middle;
@@ -108,8 +109,11 @@ body {
   border-radius: 999px; padding: 4px 11px; margin-left: 16px; cursor: pointer;
 }
 .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
-.theme-toggle .theme-icon { font-size: 0.95rem; line-height: 1; }
+.theme-toggle { flex: 0 0 auto; }
+.theme-toggle .theme-icon { font-size: 0.95rem; line-height: 1; display: inline-block; width: 1.15em; text-align: center; }
 @media (max-width: 520px) {
+  .topbar .wrap { padding-left: 14px; padding-right: 14px; gap: 8px; }
+  .topbar nav a { margin-left: 12px; }
   .theme-toggle { margin-left: 10px; padding: 5px 8px; }
   .theme-toggle .theme-label { display: none; }
 }

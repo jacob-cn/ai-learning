@@ -59,4 +59,6 @@ and stop immediately, which isn't as interesting to watch.
   RPD/TPM (wait for daily reset, or switch to a model with more headroom).
 
 ## Screenshot
+_Tested on Python 3.14.6 · macOS 15.7.7._
+
 ![Autonomous agent reading a file, editing it, and the separate verifier's PASS/FAIL](assets/screenshot01.png)

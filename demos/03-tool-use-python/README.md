@@ -27,5 +27,7 @@ Try: `list files in .`, `read the file dev_assistant.py`,
   wait ~60 seconds, or see the Stage 6 demo for the full rate-limit story.
 
 ## Screenshots
+_Tested on Python 3.14.6 · macOS 15.7.7._
+
 ![Dev assistant calling the list_files tool, then answering](assets/screenshot01.png)
 ![Dev assistant calling read_file on a chosen file](assets/screenshot02.png)

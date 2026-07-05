@@ -36,4 +36,6 @@ Type `reindex` the first time, or whenever you change the files in `docs/`.
   see the Setup step above, not the Python dependencies.
 
 ## Screenshot
+_Tested on Python 3.14.6 · macOS 15.7.7._
+
 ![RAG demo answering a question and printing the Sources line for the chunks it used](assets/screenshot01.png)

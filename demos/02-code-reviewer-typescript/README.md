@@ -58,4 +58,6 @@ intentional bugs is in `sample-input.kt` in this folder.)
 Full write-up: see the Stage 2 page on the main site.
 
 ## Screenshot
+_Tested on macOS 15.7.7._
+
 ![Android code reviewer output — score, summary, verdict and a list of tagged issues](assets/screenshot01.png)

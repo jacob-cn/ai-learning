@@ -103,5 +103,7 @@ then an IPv6-vs-IPv4 issue. If you reuse this server pattern elsewhere, keep
 that binding as-is.
 
 ## Screenshots
+_Tested on Python 3.14.6 · macOS 15.7.7._
+
 ![MCP notes server registered and connected to a client](assets/screenshot01.png)
 ![The client calling the notes tools and naming the actual files](assets/screenshot02.png)
