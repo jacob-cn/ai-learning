@@ -5,6 +5,11 @@ replacement for git history. Add a new entry whenever a stage is added or
 meaningfully changed. Newest entry at the top; tagged releases use a
 `## vX.Y.Z — date` header (Semantic Versioning).
 
+## v1.1.1 — 2026-07-06
+- Theme toggle keeps a constant width on desktop: both the icon and the label
+  (Auto/Light/Dark) now have a fixed width, so switching modes no longer nudges the
+  layout.
+
 ## v1.1.0 — 2026-07-06
 - Fixed the theme-toggle button wrapping to a second line on narrow screens (e.g.
   Android Chrome): the nav is now a non-wrapping flex row, the icon has a fixed

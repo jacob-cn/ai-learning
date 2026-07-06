@@ -110,7 +110,8 @@ body {
 }
 .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
 .theme-toggle { flex: 0 0 auto; }
-.theme-toggle .theme-icon { font-size: 0.95rem; line-height: 1; display: inline-block; width: 1.15em; text-align: center; }
+.theme-toggle .theme-icon { font-size: 0.95rem; line-height: 1; display: inline-block; width: 1.25em; text-align: center; }
+.theme-toggle .theme-label { display: inline-block; width: 3.2em; text-align: left; }
 @media (max-width: 520px) {
   .topbar .wrap { padding-left: 14px; padding-right: 14px; gap: 8px; }
   .topbar nav a { margin-left: 12px; }
